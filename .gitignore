@@ -1,11 +1,11 @@
-# Ignore virtual environments
+# ignore virtual environments
 venv/
 .env
 
-# # Ignore raw data and heavy files
+# # ignore raw data and heavy files
 # data/raw/*.csv
 # *.csv
 
-# Ignore Python cache
+# ignore Python cache
 __pycache__/
 *.pyc
