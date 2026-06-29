@@ -2,9 +2,9 @@
 venv/
 .env
 
-# # ignore raw data and heavy files
-# data/raw/*.csv
-# *.csv
+# ignore scraped data and twscrape session DB
+data/raw/*.csv
+data/accounts.db
 
 # ignore Python cache
 __pycache__/
