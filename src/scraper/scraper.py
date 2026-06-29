@@ -10,12 +10,19 @@ First-time setup — add at least one Twitter account:
 
 import asyncio
 import csv
+import re
 from pathlib import Path
 
 from loguru import logger
 from twscrape import API
 
 from src.scraper import config
+
+
+_URL_RE = re.compile(r"https?://\S+")
+
+def has_text(content: str) -> bool:
+    return bool(_URL_RE.sub("", content).strip())
 
 
 def build_query(base: str) -> str:
@@ -57,6 +64,8 @@ async def scrape_query(
 
     async for tweet in api.search(full_query, limit=config.LIMIT_PER_QUERY):
         if tweet.id in seen_ids:
+            continue
+        if not has_text(tweet.rawContent or ""):
             continue
         seen_ids.add(tweet.id)
 
