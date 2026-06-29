@@ -124,7 +124,7 @@ All settings are in `src/scraper/config.py`:
 
 | Setting | Default | Description |
 |---|---|---|
-| `LIMIT_PER_QUERY` | `500` | Max tweets to collect per search term |
+| `LIMIT_PER_QUERY` | `10` | Max tweets to collect per search term |
 | `DATE_SINCE` | `None` | Filter tweets after this date, e.g. `"2024-01-01"` |
 | `DATE_UNTIL` | `None` | Filter tweets before this date, e.g. `"2024-12-31"` |
 | `EXCLUDE_RETWEETS` | `True` | Append `-is:retweet` to all queries |
