@@ -35,7 +35,7 @@ def load_seen_ids(csv_path: Path) -> set[int]:
     seen: set[int] = set()
     if not csv_path.exists():
         return seen
-    with csv_path.open("r", encoding="utf-8", newline="") as f:
+    with csv_path.open("r", encoding="utf-8-sig", newline="") as f:
         reader = csv.DictReader(f)
         for row in reader:
             try:
@@ -84,9 +84,12 @@ async def main() -> None:
 
     api = API(str(config.ACCOUNTS_DB))
 
-    # Open CSV in append mode; write header only if the file is new/empty
+    # Open CSV in append mode; write header only if the file is new/empty.
+    # utf-8-sig adds a BOM on new files so Excel opens them correctly (no garbled emojis).
+    # Existing files append with plain utf-8 to avoid inserting a stray BOM mid-file.
     write_header = not config.OUTPUT_CSV.exists() or config.OUTPUT_CSV.stat().st_size == 0
-    fh = config.OUTPUT_CSV.open("a", encoding="utf-8", newline="")
+    encoding = "utf-8-sig" if write_header else "utf-8"
+    fh = config.OUTPUT_CSV.open("a", encoding=encoding, newline="")
     writer = csv.DictWriter(fh, fieldnames=config.CSV_COLUMNS)
     if write_header:
         writer.writeheader()
