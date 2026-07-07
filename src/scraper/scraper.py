@@ -18,7 +18,7 @@ from twscrape import API
 
 from src.scraper import config
 
-
+# ignore URL link only tweet
 _URL_RE = re.compile(r"https?://\S+")
 
 def has_text(content: str) -> bool:
@@ -29,8 +29,8 @@ def build_query(base: str) -> str:
     q = base
     if config.EXCLUDE_RETWEETS:
         q += " -is:retweet"
-    if config.EXCLUDE_OFFICIAL_ACCOUNT:
-        q += " -from:MyRapidKL"
+    if config.EXCLUDE_OFFICIAL_ACCOUNT and config.EXCLUDE_ACCOUNT:
+        q += f" -from:{config.EXCLUDE_ACCOUNT}"
     if config.DATE_SINCE:
         q += f" since:{config.DATE_SINCE}"
     if config.DATE_UNTIL:
