@@ -1,5 +1,5 @@
 """
-Rapid KL tweet scraper for NLP sentiment analysis.
+World Cup 2018 tweet scraper for NLP sentiment analysis.
 
 Usage (from project root, venv activated):
     python -m src.scraper.scraper
