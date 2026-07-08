@@ -1,6 +1,6 @@
-# NLP Sentiment Analysis — Rapid KL Tweets
+# NLP Sentiment Analysis — World Cup 2018 Tweets
 
-Collects tweets about Rapid KL (Malaysian public transit) from Twitter/X and runs NLP sentiment analysis on them.
+Collects tweets about the 2018 FIFA World Cup from Twitter/X and runs NLP sentiment analysis on them.
 
 See [scraper.md](scraper.md) for full scraper documentation.
 
@@ -29,4 +29,25 @@ Paste them as: `auth_token=abc123; ct0=xyz456`
 python -m src.scraper.scraper
 ```
 
-Output is saved to `data/raw/rapidkl_tweets.csv`. Re-running is safe — it skips tweets already collected.
+Output is saved to `data/raw/worldcup2018_tweets.csv`. Re-running is safe — it skips tweets already collected.
+
+---
+
+## Text cleaning utilities
+
+This project now includes a simple emoji demojization helper in `src/data_cleaning/text_cleaning.py`.
+
+Example usage:
+
+```python
+from src.data_cleaning.text_cleaning import demojize_emoji
+
+text = "I love ronaldao 🏐"
+cleaned = demojize_emoji(text, language="en")
+print(cleaned)
+```
+
+Currently available helper:
+- `demojize_emoji(text, language="en")`
+
+More data-cleaning helpers can be added later as needed.

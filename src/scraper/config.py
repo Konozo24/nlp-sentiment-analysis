@@ -5,17 +5,17 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR    = PROJECT_ROOT / "data"
 RAW_DIR     = DATA_DIR / "raw"
 ACCOUNTS_DB = DATA_DIR / "accounts.db"
-OUTPUT_CSV  = RAW_DIR / "rapidkl_tweets.csv"
+OUTPUT_CSV  = RAW_DIR / "worldcup2018_tweets.csv"
 
 SEARCH_QUERIES = [
-    "to:MyRapidKL",
+    "FIFA World Cup 2018",
 ]
 
-LIMIT_PER_QUERY = 700
-DATE_SINCE: str | None = "2026-01-01"
-DATE_UNTIL: str | None = None   # e.g. "2024-12-31"
+LIMIT_PER_QUERY = 10000
+DATE_SINCE: str | None = "2018-06-01"
+DATE_UNTIL: str | None = "2018-07-31"   # World Cup 2018 date range
 EXCLUDE_RETWEETS = True           # appends -is:retweet to every query
-EXCLUDE_OFFICIAL_ACCOUNT = True   # appends -from:MyRapidKL; removes their own announcements
+OFFICIAL_ACCOUNT_TO_EXCLUDE: str | None = None  # set to username to exclude tweets from that account
 
 CSV_COLUMNS = [
     "id",

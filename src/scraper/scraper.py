@@ -1,5 +1,5 @@
 """
-Rapid KL tweet scraper for NLP sentiment analysis.
+World Cup 2018 tweet scraper for NLP sentiment analysis.
 
 Usage (from project root, venv activated):
     python -m src.scraper.scraper
@@ -29,8 +29,8 @@ def build_query(base: str) -> str:
     q = base
     if config.EXCLUDE_RETWEETS:
         q += " -is:retweet"
-    if config.EXCLUDE_OFFICIAL_ACCOUNT:
-        q += " -from:MyRapidKL"
+    if config.OFFICIAL_ACCOUNT_TO_EXCLUDE:
+        q += f" -from:{config.OFFICIAL_ACCOUNT_TO_EXCLUDE}"
     if config.DATE_SINCE:
         q += f" since:{config.DATE_SINCE}"
     if config.DATE_UNTIL:

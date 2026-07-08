@@ -1,6 +1,6 @@
-# Rapid KL Twitter Scraper
+# World Cup 2018 Twitter Scraper
 
-Web crawler for collecting Rapid KL-related tweets from Twitter/X as a dataset for NLP sentiment analysis. Built with [twscrape](https://github.com/vladkens/twscrape).
+Web crawler for collecting tweets about the 2018 FIFA World Cup from Twitter/X as a dataset for NLP sentiment analysis. Built with [twscrape](https://github.com/vladkens/twscrape).
 
 ---
 
@@ -41,7 +41,7 @@ When prompted:
 python -m src.scraper.scraper
 ```
 
-Run from the project root. Output is saved to `data/raw/rapidkl_tweets.csv`.
+Run from the project root. Output is saved to `data/raw/worldcup2018_tweets.csv`.
 
 Re-running the script is safe — it only appends new tweets and skips any already collected.
 
@@ -65,7 +65,7 @@ main()
          │
          ├─ build_query()
          │    Constructs the final Twitter search string:
-         │    e.g. "to:MyRapidKL -is:retweet -from:MyRapidKL"
+         │    e.g. "world cup 2018 -is:retweet"
          │
          ├─ api.search(query, limit=500)
          │    Sends query to Twitter, paginates automatically
@@ -88,14 +88,16 @@ Defined in `src/scraper/config.py`:
 
 | Query | Purpose |
 |---|---|
-| `to:MyRapidKL` | Direct complaints/praise to the official account — highest sentiment signal |
+| `world cup 2018` | Broad coverage of 2018 World Cup discussion |
+| `#WorldCup2018` | Tweets with the main event hashtag |
+| `FIFA World Cup 2018` | Full phrase search for event-specific commentary |
+| `WorldCup2018` | Common hashtag variant |
 
 ### Automatic Filters Applied to Every Query
 
 | Filter | Effect |
 |---|---|
 | `-is:retweet` | Excludes retweets — keeps only original tweets for cleaner text diversity |
-| `-from:MyRapidKL` | Excludes Rapid KL's own posts — their announcements are neutral, not opinionated |
 
 The same tweet matched by multiple queries is only saved once (deduplicated by tweet ID).
 
@@ -128,6 +130,6 @@ All settings are in `src/scraper/config.py`:
 | `DATE_SINCE` | `None` | Filter tweets after this date, e.g. `"2024-01-01"` |
 | `DATE_UNTIL` | `None` | Filter tweets before this date, e.g. `"2024-12-31"` |
 | `EXCLUDE_RETWEETS` | `True` | Append `-is:retweet` to all queries |
-| `EXCLUDE_OFFICIAL_ACCOUNT` | `True` | Append `-from:MyRapidKL` to all queries |
-| `OUTPUT_CSV` | `data/raw/rapidkl_tweets.csv` | Output file path |
+| `OFFICIAL_ACCOUNT_TO_EXCLUDE` | `None` | Username to exclude from all queries, e.g. `some_account` |
+| `OUTPUT_CSV` | `data/raw/worldcup2018_tweets.csv` | Output file path |
 | `ACCOUNTS_DB` | `data/accounts.db` | twscrape session database |
