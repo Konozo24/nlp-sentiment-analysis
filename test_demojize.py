@@ -1,7 +1,7 @@
 import csv
 from pathlib import Path
 
-from src.data_cleaning.text_cleaning import demojize_emoji
+from src.data_cleaning.utils import demojize_emoji
 
 CSV_PATH = Path(__file__).resolve().parent / "data" / "raw" / "worldcup2018_tweets.csv"
 

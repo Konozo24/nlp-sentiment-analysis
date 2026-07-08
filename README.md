@@ -35,12 +35,12 @@ Output is saved to `data/raw/worldcup2018_tweets.csv`. Re-running is safe — it
 
 ## Text cleaning utilities
 
-This project now includes a simple emoji demojization helper in `src/data_cleaning/text_cleaning.py`.
+This project now includes a simple emoji demojization helper in `src/data_cleaning/utils.py`.
 
 Example usage:
 
 ```python
-from src.data_cleaning.text_cleaning import demojize_emoji
+from src.data_cleaning.utils import demojize_emoji
 
 text = "I love ronaldao 🏐"
 cleaned = demojize_emoji(text, language="en")
