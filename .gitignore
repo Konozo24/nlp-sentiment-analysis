@@ -6,6 +6,13 @@ venv/
 data/raw/*.csv
 data/accounts.db
 
+# ignore the fastText language-ID model (auto-downloaded by detect_language.py)
+data/models/
+
+# ignore regenerable outputs (rebuild via base_cleaning + detect_language);
+# merged_tweets.csv is NOT ignored — it holds hand-verified sentiment labels
+data/processed/cleaned_tweets.csv
+
 # ignore Python cache
 __pycache__/
 *.pyc
