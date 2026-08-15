@@ -11,6 +11,7 @@ import string
 import emoji
 
 _URL_RE = re.compile(r"https?://\S+|www\.\S+")
+_TCO_URL_RE = re.compile(r"https?://t\.co/\S+")
 _MENTION_RE = re.compile(r"@\w+")
 _HASHTAG_SYMBOL_RE = re.compile(r"#(\w+)")
 _NUMBER_RE = re.compile(r"\d+")
@@ -26,6 +27,11 @@ def unescape_html(text: str) -> str:
 
 def remove_links(text: str) -> str:
     return _URL_RE.sub("", text)
+
+
+def remove_tco_links(text: str) -> str:
+    """Strip Twitter t.co URLs while leaving other web links intact."""
+    return _TCO_URL_RE.sub("", text)
 
 
 def remove_rt_prefix(text: str) -> str:

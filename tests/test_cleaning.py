@@ -15,6 +15,7 @@ from src.data_cleaning.utils import (
     remove_punctuation,
     remove_rt_prefix,
     replace_mentions_with_token,
+    remove_tco_links,
 )
 
 
@@ -48,6 +49,10 @@ def test_demojize_to_token_keeps_single_token():
 
 def test_normalize_whitespace():
     assert normalize_whitespace("  too   many\n\nspaces ") == "too many spaces"
+
+
+def test_remove_tco_links_only():
+    assert remove_tco_links("See image https://t.co/abc123 and site https://example.com") == "See image  and site https://example.com"
 
 
 def test_remove_punctuation():
