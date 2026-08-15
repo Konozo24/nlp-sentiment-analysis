@@ -38,9 +38,9 @@ async def add_account_interactive(api: API) -> None:
         await api.pool.add_account(username, "unused", "unused@unused.com", "unused", cookies=cookies)
         logger.success(f"Added @{username} with cookies (no login required)")
     else:
-        username   = input("Twitter username: ").strip()
-        password   = input("Twitter password: ").strip()
-        email      = input("Account email: ").strip()
+        username = input("Twitter username: ").strip()
+        password = input("Twitter password: ").strip()
+        email = input("Account email: ").strip()
         email_pass = input("Email password (for IMAP verification, or Enter to skip): ").strip() or ""
 
         await api.pool.add_account(username, password, email, email_pass)

@@ -48,8 +48,7 @@ def predict(tweet: str, model, tokenizer, labels):
         print(f"  {task:9s}: {labels[task][best]}  ({probs[best]:.0%} sure)")
 
     tag_ids = model.crf.decode(out["ner"], mask=batch["word_mask"])[0]
-    tagged = [f"{w}[{labels['ner'][t]}]" if labels["ner"][t] != "O" else w
-              for w, t in zip(words, tag_ids)]
+    tagged = [f"{w}[{labels['ner'][t]}]" if labels["ner"][t] != "O" else w for w, t in zip(words, tag_ids)]
     print(f"  entities : {' '.join(tagged)}")
 
 

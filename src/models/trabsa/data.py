@@ -14,8 +14,9 @@ carries:
   ner                        : one tag per word
 """
 
-import json
+import json  # noqa: I001 — import order below is intentional (see next line)
 
+# sklearn must import before torch, or Windows raises a heap-corruption crash
 from sklearn.model_selection import train_test_split
 
 import pandas as pd
@@ -114,5 +115,10 @@ def make_batches(df, tokenizer, labels, batch_size, shuffle=False):
 
 
 __all__ = [
-    "build_labels", "encode_batch", "load_and_split", "load_json", "make_batches", "save_json",
+    "build_labels",
+    "encode_batch",
+    "load_and_split",
+    "load_json",
+    "make_batches",
+    "save_json",
 ]

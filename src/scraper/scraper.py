@@ -21,6 +21,7 @@ from src.scraper import config
 # ignore URL link only tweet
 _URL_RE = re.compile(r"https?://\S+")
 
+
 def has_text(content: str) -> bool:
     return bool(_URL_RE.sub("", content).strip())
 
@@ -69,16 +70,18 @@ async def scrape_query(
             continue
         seen_ids.add(tweet.id)
 
-        writer.writerow({
-            "id":           tweet.id,
-            "rawContent":   tweet.rawContent,
-            "date":         tweet.date.isoformat() if tweet.date else "",
-            "username":     tweet.user.username if tweet.user else "",
-            "likeCount":    tweet.likeCount,
-            "retweetCount": tweet.retweetCount,
-            "replyCount":   tweet.replyCount,
-            "lang":         tweet.lang or "",
-        })
+        writer.writerow(
+            {
+                "id": tweet.id,
+                "rawContent": tweet.rawContent,
+                "date": tweet.date.isoformat() if tweet.date else "",
+                "username": tweet.user.username if tweet.user else "",
+                "likeCount": tweet.likeCount,
+                "retweetCount": tweet.retweetCount,
+                "replyCount": tweet.replyCount,
+                "lang": tweet.lang or "",
+            }
+        )
         new_count += 1
 
     logger.success(f"  -> {new_count} new tweets from {query!r}")

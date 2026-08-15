@@ -30,10 +30,10 @@ def parse_entities(raw) -> list[tuple[str, str]]:
     if pd.isna(raw):
         return []
     entities = []
-    for part in str(raw).split("|"):        # "ORG: FIFA, Adidas"
+    for part in str(raw).split("|"):  # "ORG: FIFA, Adidas"
         if ":" not in part:
             continue
-        etype, names = part.split(":", 1)   # "ORG", " FIFA, Adidas"
+        etype, names = part.split(":", 1)  # "ORG", " FIFA, Adidas"
         for name in names.split(","):
             if name.strip():
                 entities.append((etype.strip().upper(), name.strip()))

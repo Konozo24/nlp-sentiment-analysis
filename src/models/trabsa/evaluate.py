@@ -7,7 +7,12 @@ the more honest NER number.
 Run:  python -m src.models.trabsa.evaluate
 """
 
-from sklearn.metrics import accuracy_score, classification_report, precision_recall_fscore_support
+# sklearn must import before torch, or Windows raises a heap-corruption crash
+from sklearn.metrics import (
+    accuracy_score,
+    classification_report,
+    precision_recall_fscore_support,
+)
 
 import torch
 
@@ -40,11 +45,16 @@ def main():
     for task in all_tasks:
         lines.append(f"\n===== {task.upper()} =====")
         lines.append(f"Accuracy: {accuracy_score(true[task], pred[task]):.4f}")
-        lines.append(classification_report(
-            true[task], pred[task],
-            labels=range(len(labels[task])), target_names=labels[task],
-            digits=4, zero_division=0,
-        ))
+        lines.append(
+            classification_report(
+                true[task],
+                pred[task],
+                labels=range(len(labels[task])),
+                target_names=labels[task],
+                digits=4,
+                zero_division=0,
+            )
+        )
         if task == "ner":
             entity_tags = [i for i, name in enumerate(labels["ner"]) if name != "O"]
             p, r, f1, _ = precision_recall_fscore_support(

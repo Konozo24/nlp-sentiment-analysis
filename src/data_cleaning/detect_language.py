@@ -83,9 +83,7 @@ def validate_against_twitter_labels(model, df: pd.DataFrame) -> None:
     confident = labelled[labelled["detected"] != "und"]
     coverage = len(confident) / len(labelled)
     agreement = (confident["detected"] == confident["twitter_iso"]).mean()
-    en_agreement = (
-        (confident["detected"] == "en") == (confident["twitter_iso"] == "en")
-    ).mean()
+    en_agreement = ((confident["detected"] == "en") == (confident["twitter_iso"] == "en")).mean()
 
     print(f"Validation on {len(labelled)} Twitter-labelled tweets:")
     print(f"  confident detections: {coverage:.1%} (rest 'und': too short/low confidence)")

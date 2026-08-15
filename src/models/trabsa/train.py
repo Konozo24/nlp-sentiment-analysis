@@ -21,8 +21,16 @@ from tqdm import tqdm
 from transformers import AutoTokenizer, get_linear_schedule_with_warmup
 
 from .config import (
-    BATCH_SIZE, ENCODER_LR, ENCODER_NAME, HEAD_LR, MAX_EPOCHS,
-    MODEL_DIR, PATIENCE, SEED, TASKS, WARMUP_RATIO,
+    BATCH_SIZE,
+    ENCODER_LR,
+    ENCODER_NAME,
+    HEAD_LR,
+    MAX_EPOCHS,
+    MODEL_DIR,
+    PATIENCE,
+    SEED,
+    TASKS,
+    WARMUP_RATIO,
 )
 from .data import build_labels, load_and_split, make_batches, save_json
 from .model import TRABSA
@@ -70,16 +78,16 @@ def main():
     encoder_params = list(model.encoder.parameters())
     encoder_ids = {id(p) for p in encoder_params}
     head_params = [p for p in model.parameters() if id(p) not in encoder_ids]
-    optimizer = torch.optim.AdamW([
-        {"params": encoder_params, "lr": ENCODER_LR},
-        {"params": head_params, "lr": HEAD_LR},
-    ])
+    optimizer = torch.optim.AdamW(
+        [
+            {"params": encoder_params, "lr": ENCODER_LR},
+            {"params": head_params, "lr": HEAD_LR},
+        ]
+    )
 
     n_train_batches = -(-len(train_df) // BATCH_SIZE)  # ceiling division
     total_steps = n_train_batches * args.epochs
-    scheduler = get_linear_schedule_with_warmup(
-        optimizer, int(total_steps * WARMUP_RATIO), total_steps
-    )
+    scheduler = get_linear_schedule_with_warmup(optimizer, int(total_steps * WARMUP_RATIO), total_steps)
 
     MODEL_DIR.mkdir(parents=True, exist_ok=True)
     save_json(labels, MODEL_DIR / "labels.json")
