@@ -24,6 +24,11 @@ def run_steps(text: str, steps: list[Step]) -> str:
 def preprocess_dataset(steps: list[Step], out_name: str, cleaned_path: Path = CLEANED_PATH) -> pd.DataFrame:
     """Apply a step chain to the cleaned dataset and save the result.
 
+    The 'tweet' column is overwritten in place with the model-specific
+    cleaned text (not added as a separate 'clean_text' column) — each
+    preprocess_*.py's output CSV is meant to be read as "this model's
+    tweets", not "raw tweet + a cleaned copy next to it".
+
     Rows whose text becomes empty after cleaning (e.g. a tweet that was
     only a URL) are dropped, as are duplicates created by the cleaning.
     """
@@ -34,11 +39,11 @@ def preprocess_dataset(steps: list[Step], out_name: str, cleaned_path: Path = CL
 
     df = pd.read_csv(cleaned_path, encoding="utf-8")
     df["tweet"] = df["tweet"].fillna("").astype(str)
-    df["clean_text"] = df["tweet"].map(lambda t: run_steps(t, steps))
+    df["tweet"] = df["tweet"].map(lambda t: run_steps(t, steps))
 
     before = len(df)
-    df = df[df["clean_text"].str.len() > 0]
-    df = df.drop_duplicates(subset="clean_text", keep="first").reset_index(drop=True)
+    df = df[df["tweet"].str.len() > 0]
+    df = df.drop_duplicates(subset="tweet", keep="first").reset_index(drop=True)
     print(f"{out_name}: {before} rows -> {len(df)} after cleaning")
 
     out_path = PROCESSED_DIR / out_name

@@ -28,7 +28,7 @@ def load_and_split():
     """Read the CSV, add BIO tags, and split 70/15/15 (always the same split)."""
     df = pd.read_csv(DATA_PATH, encoding="utf-8")
     df = df[df["lang"] == "en"]  # project scope: English tweets only
-    df = df.dropna(subset=["clean_text", *TASKS]).reset_index(drop=True)
+    df = df.dropna(subset=["tweet", *TASKS]).reset_index(drop=True)
     df = add_bio_tags(df)
 
     # First cut 30% off, then split that 30% in half -> 70/15/15.
@@ -103,7 +103,7 @@ def make_batches(df, tokenizer, labels, batch_size, shuffle=False):
 
     for start in range(0, len(df), batch_size):
         rows = df.iloc[start : start + batch_size]
-        word_lists = [str(text).split()[:MAX_LEN] for text in rows["clean_text"]]
+        word_lists = [str(text).split()[:MAX_LEN] for text in rows["tweet"]]
         tag_lists = [str(tags).split()[:MAX_LEN] for tags in rows["bio_tags"]]
 
         batch = encode_batch(word_lists, tag_lists, tokenizer, ner_ids)
