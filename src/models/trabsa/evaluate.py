@@ -7,8 +7,9 @@ the more honest NER number.
 Run:  python -m src.models.trabsa.evaluate
 """
 
-import torch
 from sklearn.metrics import accuracy_score, classification_report, precision_recall_fscore_support
+
+import torch
 
 from .config import BATCH_SIZE, MODEL_DIR, TASKS
 from .data import load_and_split, make_batches

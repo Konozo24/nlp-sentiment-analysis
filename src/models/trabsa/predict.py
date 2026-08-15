@@ -6,6 +6,7 @@ Run:  python -m src.models.trabsa.predict                       (interactive)
 
 import sys
 
+import sklearn  # noqa: F401 — must import before torch (Windows heap-corruption crash otherwise)
 import torch
 from transformers import AutoTokenizer
 

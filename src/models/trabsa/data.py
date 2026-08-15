@@ -16,9 +16,10 @@ carries:
 
 import json
 
+from sklearn.model_selection import train_test_split
+
 import pandas as pd
 import torch
-from sklearn.model_selection import train_test_split
 
 from .config import DATA_PATH, MAX_LEN, MAX_SUBWORDS, SEED, TASKS
 from .ner_bio import add_bio_tags
