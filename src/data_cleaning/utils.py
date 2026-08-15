@@ -10,7 +10,7 @@ import string
 
 import emoji
 
-_URL_RE = re.compile(r"https?://\S+|www\.\S+")
+_URL_RE = re.compile(r"https?://\S+|www\.\S+|\bhttp\b")
 _MENTION_RE = re.compile(r"@\w+")
 _HASHTAG_SYMBOL_RE = re.compile(r"#(\w+)")
 _NUMBER_RE = re.compile(r"\d+")
