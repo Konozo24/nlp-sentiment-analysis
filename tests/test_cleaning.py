@@ -3,8 +3,8 @@
 Run:  python -m pytest tests/ -v      (or)      python -m tests.test_cleaning
 """
 
-from src.data_cleaning.preprocess_bilstm import clean_for_bilstm
 from src.data_cleaning.preprocess_svm import clean_for_svm
+from src.data_cleaning.preprocess_trabsa import clean_for_trabsa
 from src.data_cleaning.preprocess_xlmr import clean_for_xlmr
 from src.data_cleaning.utils import (
     demojize_to_token,
@@ -59,9 +59,9 @@ def test_svm_pipeline_is_aggressive():
     assert out == "rt best goal red_heart worldcup"
 
 
-def test_bilstm_pipeline_keeps_stopwords():
-    out = clean_for_bilstm("This is NOT a good game! https://t.co/x")
-    assert out == "this is not a good game"
+def test_trabsa_pipeline_is_minimal():
+    out = clean_for_trabsa("@fifa The BEST goal!!! ❤️ https://t.co/x #WorldCup")
+    assert out == "@user The BEST goal!!! ❤️ http WorldCup"
 
 
 def test_xlmr_pipeline_is_minimal():

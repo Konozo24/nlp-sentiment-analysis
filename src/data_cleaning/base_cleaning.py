@@ -59,6 +59,10 @@ def build_cleaned_dataset(merged_path: Path = MERGED_PATH, out_path: Path = CLEA
     df = structural_clean(df)
     print(f"Cleaned {before} rows -> {len(df)} after removing empties/duplicates")
 
+    before_lang = len(df)
+    df = df[df["lang"] == "en"].reset_index(drop=True)
+    print(f"Filtered {before_lang} rows -> {len(df)} keeping lang == 'en'")
+
     out_path.parent.mkdir(parents=True, exist_ok=True)
     # utf-8-sig adds a BOM so Excel displays emoji/non-ASCII correctly
     df.to_csv(out_path, index=False, encoding="utf-8-sig")
