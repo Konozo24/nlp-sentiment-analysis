@@ -14,6 +14,7 @@ Run:  python -m src.models.trabsa.train [--epochs N]
 
 import argparse
 
+import sklearn  # noqa: F401 — must import before torch (Windows heap-corruption crash otherwise)
 import torch
 from torch import nn
 from tqdm import tqdm
@@ -55,6 +56,7 @@ def main():
     parser.add_argument("--epochs", type=int, default=MAX_EPOCHS)
     args = parser.parse_args()
     torch.manual_seed(SEED)
+    torch.cuda.manual_seed_all(SEED)  # no-op on CPU, needed for reproducibility on GPU
     print(f"Training on: {DEVICE} | encoder: {ENCODER_NAME}")
 
     train_df, val_df, _ = load_and_split()
@@ -91,7 +93,7 @@ def main():
         batches = make_batches(train_df, tokenizer, labels, BATCH_SIZE, shuffle=True)
         for batch in tqdm(batches, total=n_train_batches, desc=f"epoch {epoch}", leave=False):
             loss = batch_loss(model, batch, loss_fns)
-            optimizer.zero_grad()
+            optimizer.zero_grad(set_to_none=True)  # skips a memset vs zero_grad()
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             optimizer.step()
