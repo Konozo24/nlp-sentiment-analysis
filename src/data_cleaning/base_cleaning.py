@@ -36,9 +36,7 @@ def structural_clean(df: pd.DataFrame) -> pd.DataFrame:
     # become identical strings and collapse in the dedup step below.
     # HTML entities ('&amp;', '&lt;3') are decoded so no model ever sees
     # literal 'amp'/'lt' tokens.
-    df["tweet"] = (
-        df["tweet"].map(unescape_html).map(remove_rt_prefix).map(normalize_whitespace)
-    )
+    df["tweet"] = df["tweet"].map(unescape_html).map(remove_rt_prefix).map(normalize_whitespace)
 
     df = df[df["tweet"].str.len() > 0]
     df = df.drop_duplicates(subset="tweet", keep="first")
@@ -47,9 +45,7 @@ def structural_clean(df: pd.DataFrame) -> pd.DataFrame:
 
 def build_cleaned_dataset(merged_path: Path = MERGED_PATH, out_path: Path = CLEANED_PATH) -> pd.DataFrame:
     if not merged_path.exists():
-        raise FileNotFoundError(
-            f"{merged_path} not found — run 'python scripts/merge_datasets.py' first."
-        )
+        raise FileNotFoundError(f"{merged_path} not found — run 'python scripts/merge_datasets.py' first.")
 
     df = pd.read_csv(merged_path, encoding="utf-8")
     if "tweet" not in df.columns:
@@ -58,6 +54,10 @@ def build_cleaned_dataset(merged_path: Path = MERGED_PATH, out_path: Path = CLEA
     before = len(df)
     df = structural_clean(df)
     print(f"Cleaned {before} rows -> {len(df)} after removing empties/duplicates")
+
+    before_lang = len(df)
+    df = df[df["lang"] == "en"].reset_index(drop=True)
+    print(f"Filtered {before_lang} rows -> {len(df)} keeping lang == 'en'")
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     # utf-8-sig adds a BOM so Excel displays emoji/non-ASCII correctly
