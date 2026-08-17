@@ -29,6 +29,18 @@ def remove_links(text: str) -> str:
     return _URL_RE.sub("", text)
 
 
+def remove_tco_links(text: str) -> str:
+    """Strip Twitter t.co URLs while leaving other web links intact."""
+    return _TCO_URL_RE.sub("", text)
+
+
+def replace_links_with_token(text: str, token: str = "http") -> str:
+    """Replace URLs with a placeholder instead of deleting them.
+    links normalized to the literal string 'http' rather than removed
+    """
+    return _URL_RE.sub(token, text)
+
+
 def remove_rt_prefix(text: str) -> str:
     """Strip the leading 'RT @user:' marker from retweets."""
     return _RT_PREFIX_RE.sub("", text)

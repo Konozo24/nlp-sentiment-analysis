@@ -27,3 +27,7 @@ tqdm==4.68.4
 pytorch-crf==0.7.2
 # TRABSA - pretrained Twitter-RoBERTa encoder
 transformers==5.13.1
+
+# SVM - NER entity text extraction
+spacy==3.8.15
+en_core_web_trf @ https://github.com/explosion/spacy-models/releases/download/en_core_web_trf-3.8.0/en_core_web_trf-3.8.0-py3-none-any.whl
