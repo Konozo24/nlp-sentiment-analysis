@@ -28,6 +28,14 @@ def unescape_html(text: str) -> str:
 def remove_links(text: str) -> str:
     return _URL_RE.sub("", text)
 
+def replace_links_with_token(text: str, token: str = "http") -> str:
+    """Replace links with a generic token instead of deleting them.
+
+    Transformer models (XLM-R/mBERT) were pre-trained on text where links
+    carry positional meaning, so keeping a placeholder beats deleting.
+    """
+    return _URL_RE.sub(token, text)
+
 
 def remove_rt_prefix(text: str) -> str:
     """Strip the leading 'RT @user:' marker from retweets."""

@@ -5,7 +5,7 @@ Run:  python -m pytest tests/ -v      (or)      python -m tests.test_cleaning
 
 from src.data_cleaning.preprocess_svm import clean_for_svm
 from src.data_cleaning.preprocess_trabsa import clean_for_trabsa
-from src.data_cleaning.preprocess_xlmr import clean_for_xlmr
+from src.data_cleaning.preprocess_robertacnn import clean_for_robertacnn
 from src.data_cleaning.utils import (
     demojize_to_token,
     normalize_whitespace,
@@ -69,8 +69,8 @@ def test_trabsa_pipeline_is_minimal():
     assert out == "@user The BEST goal!!! ❤️ http WorldCup"
 
 
-def test_xlmr_pipeline_is_minimal():
-    out = clean_for_xlmr("@fifa The BEST goal!!! ❤️ https://t.co/x #WorldCup")
+def test_robertacnn_pipeline_is_minimal():
+    out = clean_for_robertacnn("@fifa The BEST goal!!! ❤️ https://t.co/x #WorldCup")
     assert out == "@user The BEST goal!!! ❤️ WorldCup"
 
 

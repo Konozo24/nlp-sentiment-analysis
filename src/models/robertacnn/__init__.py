@@ -1,0 +1,1 @@
+"""RobertaCNN — pretrained Twitter-RoBERTa encoder -> multi-kernel CNN -> one head per task (plus CNN+CRF for NER)."""
