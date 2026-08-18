@@ -252,37 +252,3 @@ joblib.dump(svm_models, OUTPUT_DIR / "svm_models.pkl")
 
 print("\nModel saved successfully!")
 print("Artifacts: tfidf.pkl, label_encoders.pkl, ner_binarizer.pkl, svm_models.pkl")
-
-# ==========================
-# Interactive Testing
-# ==========================
-
-print("\n========== TEST THE MODEL ==========")
-
-while True:
-
-    comment = input("\nEnter a tweet (type 'exit' to quit): ")
-
-    if comment.lower() == "exit":
-        print("Program ended.")
-        break
-
-    x_comment = vectorizer.transform([comment])
-    if GPU_AVAILABLE:
-        import cudf
-        x_comment = vectorizer.transform(cudf.Series([comment]))
-
-    prediction = {}
-    for col in SINGLE_LABEL_COLUMNS:
-        pred_idx = to_numpy(svm_models[col].predict(x_comment))[0]
-        prediction[col] = encoders[col].inverse_transform([int(pred_idx)])[0]
-
-    ner_pred = to_numpy(svm_models["ner"].predict(x_comment))[0].astype(bool)
-    predicted_types = mlb.classes_[ner_pred]
-
-    print("\n========== Prediction ==========")
-    print("Tweet      :", comment)
-    print("Sentiment  :", prediction["sentiment"])
-    print("Emotion    :", prediction["emotion"])
-    print("Topic      :", prediction["topic"])
-    print("NER types  :", ", ".join(predicted_types) if len(predicted_types) else "None")
