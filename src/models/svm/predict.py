@@ -1,49 +1,33 @@
+"""Predict SVM labels for a tweet.
+
+Run: ``python -m src.models.svm.predict`` or pass a tweet as arguments.
+"""
+
+import sys
+
 import joblib
 import numpy as np
-import spacy
-from pathlib import Path
 
-MODEL_DIR = Path(__file__).resolve().parent
-
-# Load trained artifacts
-vectorizer = joblib.load(MODEL_DIR / "tfidf.pkl")
-label_encoders = joblib.load(MODEL_DIR / "label_encoders.pkl")   # sentiment/emotion/topic
-ner_binarizer = joblib.load(MODEL_DIR / "ner_binarizer.pkl")     # PER/ORG/LOC/EVENT
-svm_models = joblib.load(MODEL_DIR / "svm_models.pkl")           # dict of LinearSVC/OvR
-
-SINGLE_LABEL_COLUMNS = ["sentiment", "emotion", "topic"]
-NER_LABEL_MAP = {
-    "PERSON": "PER",
-    "ORG": "ORG",
-    "GPE": "LOC",
-    "LOC": "LOC",
-    "EVENT": "EVENT",
-}
-
-# spaCy handles the actual entity TEXT extraction (who/what/where).
-# The SVM only decides WHICH entity types are present.
-nlp = spacy.load("en_core_web_trf")
+from .config import ARTIFACTS, LEGACY_MODEL_DIR, MODEL_DIR, TASKS
+from .model import GPU_AVAILABLE
+from .ner_bio import format_bio_entities
 
 
-def format_bio_entities(text):
-    """Show each named entity using BIO tags, e.g. Cristiano [B-PER]."""
-    doc = nlp(text)
-    tags = ["O"] * len(doc)
-    for entity in doc.ents:
-        entity_type = NER_LABEL_MAP.get(entity.label_)
-        if entity_type is None:
-            continue
-        for token_i in range(entity.start, entity.end):
-            prefix = "B" if token_i == entity.start else "I"
-            tags[token_i] = f"{prefix}-{entity_type}"
-    return " ".join(
-        f"{token.text} [{tag}]" if tag != "O" else token.text
-        for token, tag in zip(doc, tags)
-    )
+def _artifact_dir():
+    """Prefer the new data/models location, fall back to pre-refactor files."""
+    if all((MODEL_DIR / name).exists() for name in ARTIFACTS):
+        return MODEL_DIR
+    if all((LEGACY_MODEL_DIR / name).exists() for name in ARTIFACTS):
+        return LEGACY_MODEL_DIR
+    raise FileNotFoundError("No SVM artifacts found. Run: python -m src.models.svm.train")
+
+
+def load_model():
+    directory = _artifact_dir()
+    return tuple(joblib.load(directory / name) for name in ("svm_models.pkl", "tfidf.pkl", "label_encoders.pkl", "ner_binarizer.pkl"))
 
 
 def confidence_from_scores(scores):
-    """Convert SVM decision scores into a display-only confidence estimate."""
     scores = np.asarray(scores).reshape(-1).astype(float)
     if scores.size == 1:
         probability = 1 / (1 + np.exp(-scores[0]))
@@ -53,48 +37,44 @@ def confidence_from_scores(scores):
     return probabilities.max()
 
 
-def ner_confidence(scores, selected):
-    probabilities = 1 / (1 + np.exp(-np.asarray(scores).reshape(-1).astype(float)))
-    return probabilities[selected].max() if selected.any() else (1 - probabilities).max()
-
-
-def predict(text):
-    x = vectorizer.transform([text])
-
+def predict(text, models=None, vectorizer=None, encoders=None, binarizer=None):
+    if models is None:
+        models, vectorizer, encoders, binarizer = load_model()
+    texts = [text]
+    if GPU_AVAILABLE:
+        import cudf
+        texts = cudf.Series(texts)
+    features = vectorizer.transform(texts)
     result = {}
-    for col in SINGLE_LABEL_COLUMNS:
-        pred_idx = svm_models[col].predict(x)[0]
-        result[col] = label_encoders[col].inverse_transform([pred_idx])[0]
-        result[f"{col}_confidence"] = confidence_from_scores(
-            svm_models[col].decision_function(x)
-        )
-
-    # Multi-label entity-type prediction from the SVM
-    ner_pred = svm_models["ner"].predict(x)[0]
-    selected_types = ner_pred.astype(bool)
+    for task in TASKS:
+        predicted = models[task].predict(features)[0]
+        result[task] = encoders[task].inverse_transform([predicted])[0]
+        result[f"{task}_confidence"] = confidence_from_scores(models[task].decision_function(features))
+    selected = np.asarray(models["ner"].predict(features)[0]).astype(bool)
+    scores = np.asarray(models["ner"].decision_function(features)).reshape(-1).astype(float)
+    probabilities = 1 / (1 + np.exp(-scores))
+    result["ner_confidence"] = probabilities[selected].max() if selected.any() else (1 - probabilities).max()
     result["ner_bio"] = format_bio_entities(text)
-    result["ner_confidence"] = ner_confidence(
-        svm_models["ner"].decision_function(x), selected_types
-    )
-
     return result
 
 
-if __name__ == "__main__":
-    print("========== Tweet Classifier (SVM) ==========")
-
+def main():
+    models, vectorizer, encoders, binarizer = load_model()
+    if len(sys.argv) > 1:
+        tweets = [" ".join(sys.argv[1:])]
+    else:
+        tweets = None
     while True:
-        comment = input("\nEnter a tweet (type 'exit' to quit): ")
-
-        if comment.lower() == "exit":
-            print("Program ended.")
+        tweet = tweets.pop() if tweets else input("Enter a tweet (empty to quit): ").strip()
+        if not tweet:
+            break
+        result = predict(tweet, models, vectorizer, encoders, binarizer)
+        for task in TASKS:
+            print(f"{task.title():9s}: {result[task]} ({result[f'{task}_confidence']:.0%} sure)")
+        print(f"NER      : {result['ner_bio']} ({result['ner_confidence']:.0%} sure)")
+        if tweets is not None:
             break
 
-        prediction = predict(comment)
 
-        print("\n========== RESULT ==========")
-        print("Tweet     :", comment)
-        print(f"Sentiment : {prediction['sentiment']} ({prediction['sentiment_confidence']:.0%} sure)")
-        print(f"Emotion   : {prediction['emotion']} ({prediction['emotion_confidence']:.0%} sure)")
-        print(f"Topic     : {prediction['topic']} ({prediction['topic_confidence']:.0%} sure)")
-        print(f"NER       : {prediction['ner_bio']} ({prediction['ner_confidence']:.0%} sure)")
+if __name__ == "__main__":
+    main()
