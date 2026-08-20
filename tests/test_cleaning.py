@@ -4,7 +4,7 @@ Run:  python -m pytest tests/ -v      (or)      python -m tests.test_cleaning
 """
 
 from src.data_cleaning.preprocess_svm import clean_for_svm
-from src.data_cleaning.preprocess_trabsa import clean_for_trabsa
+from src.data_cleaning.preprocess_bilstm import clean_for_bilstm
 from src.data_cleaning.preprocess_robertacnn import clean_for_robertacnn
 from src.data_cleaning.utils import (
     demojize_to_token,
@@ -14,6 +14,7 @@ from src.data_cleaning.utils import (
     remove_mentions,
     remove_punctuation,
     remove_rt_prefix,
+    remove_unicode_punctuation,
     replace_mentions_with_token,
     remove_tco_links,
 )
@@ -64,9 +65,15 @@ def test_svm_pipeline_is_aggressive():
     assert out == "rt best goal red_heart worldcup"
 
 
-def test_trabsa_pipeline_is_minimal():
-    out = clean_for_trabsa("@fifa The BEST goal!!! ❤️ https://t.co/x #WorldCup")
-    assert out == "@user The BEST goal!!! ❤️ http WorldCup"
+def test_remove_unicode_punctuation():
+    # ASCII punctuation goes, and so do the curly quotes and dashes that
+    # string.punctuation misses. Emoji are symbols, not punctuation, so stay.
+    assert remove_unicode_punctuation("Gooal!!! “messi” — #1? ❤") == "Gooal messi  1 ❤"
+
+
+def test_bilstm_pipeline_normalises_hard():
+    out = clean_for_bilstm("@fifa The BEST goal!!! ❤️ https://t.co/x #WorldCup")
+    assert out == "usermention the best goal red_heart worldcup"
 
 
 def test_robertacnn_pipeline_is_minimal():

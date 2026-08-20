@@ -7,6 +7,7 @@ Pipelines in preprocess_*.py compose these into model-specific chains.
 import html
 import re
 import string
+import unicodedata
 
 import emoji
 
@@ -27,15 +28,6 @@ def unescape_html(text: str) -> str:
 
 def remove_links(text: str) -> str:
     return _URL_RE.sub("", text)
-
-def replace_links_with_token(text: str, token: str = "http") -> str:
-    """Replace links with a generic token instead of deleting them.
-
-    Transformer models (XLM-R/mBERT) were pre-trained on text where links
-    carry positional meaning, so keeping a placeholder beats deleting.
-    """
-    return _URL_RE.sub(token, text)
-
 
 def remove_tco_links(text: str) -> str:
     """Strip Twitter t.co URLs while leaving other web links intact."""
@@ -89,6 +81,20 @@ def lowercase(text: str) -> str:
 
 def remove_punctuation(text: str) -> str:
     return text.translate(str.maketrans("", "", string.punctuation))
+
+
+def remove_unicode_punctuation(text: str) -> str:
+    """Strip punctuation in ANY script, not just ASCII.
+
+    `string.punctuation` misses the curly quotes, en/em dashes and ellipses
+    that Twitter clients insert automatically. Left in, they fragment the
+    vocabulary of a static-embedding model — 'messi', '"messi' and 'messi'
+    become three unrelated entries with three unrelated vectors.
+
+    Emoji are Unicode category So (symbol), not P (punctuation), so they pass
+    through untouched and can still be demojized afterwards.
+    """
+    return "".join(ch for ch in text if not unicodedata.category(ch).startswith("P"))
 
 
 def remove_numbers(text: str) -> str:
