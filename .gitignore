@@ -16,3 +16,6 @@ data/processed/cleaned_tweets.csv
 # ignore Python cache
 __pycache__/
 *.pyc
+# ignore embedding artifacts (regenerable via scripts/build_embeddings.py):
+# the 7GB fastText download, the pruned matrices, and the in-domain model
+data/embeddings/
