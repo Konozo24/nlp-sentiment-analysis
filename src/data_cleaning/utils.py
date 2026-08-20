@@ -51,11 +51,7 @@ def remove_mentions(text: str) -> str:
 
 
 def replace_mentions_with_token(text: str, token: str = "@user") -> str:
-    """Replace @mentions with a generic token instead of deleting them.
-
-    Transformer models (XLM-R/mBERT) were pre-trained on text where mentions
-    carry positional meaning, so keeping a placeholder beats deleting.
-    """
+    """Replace @mentions with a generic token instead of deleting them."""
     return _MENTION_RE.sub(token, text)
 
 
@@ -65,13 +61,7 @@ def remove_hashtag_symbol(text: str) -> str:
 
 
 def demojize_to_token(text: str, language: str = "en") -> str:
-    """Convert each emoji into a single vocabulary token, e.g. '❤️' -> ' red_heart '.
-
-    One underscore-joined token per emoji keeps it a distinct feature for
-    TF-IDF/BiLSTM instead of dissolving into generic words. Must run AFTER
-    remove_punctuation (emoji are Unicode, so punctuation removal doesn't
-    touch them, but it would strip these underscores).
-    """
+    """Convert each emoji into a single vocabulary token, e.g. '❤️' -> ' red_heart '."""
     return emoji.demojize(text, delimiters=(" ", " "), language=language)
 
 
@@ -84,15 +74,11 @@ def remove_punctuation(text: str) -> str:
 
 
 def remove_unicode_punctuation(text: str) -> str:
-    """Strip punctuation in ANY script, not just ASCII.
+    """Strip all Unicode punctuation characters from a string.
 
-    `string.punctuation` misses the curly quotes, en/em dashes and ellipses
-    that Twitter clients insert automatically. Left in, they fragment the
-    vocabulary of a static-embedding model — 'messi', '"messi' and 'messi'
-    become three unrelated entries with three unrelated vectors.
-
-    Emoji are Unicode category So (symbol), not P (punctuation), so they pass
-    through untouched and can still be demojized afterwards.
+    Removes all characters belonging to Unicode punctuation categories (P*),
+    including non-ASCII variants such as curly quotes, em dashes, and ellipses,
+    while preserving symbols (e.g., emoji in category 'So') and alphanumeric tokens.
     """
     return "".join(ch for ch in text if not unicodedata.category(ch).startswith("P"))
 
