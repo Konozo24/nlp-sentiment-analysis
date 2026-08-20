@@ -3,15 +3,10 @@
 import pandas as pd
 from sklearn.preprocessing import LabelEncoder, MultiLabelBinarizer
 
+from src.models.metrics import findable_entity_types
+
 from .config import DATA_PATH, ENTITY_TYPES, TASKS, TFIDF_KWARGS
 from .model import make_vectorizer
-
-
-def parse_entity_types(ner_value) -> list[str]:
-    """Extract entity types from ``PER: Messi | ORG: FIFA`` annotations."""
-    if pd.isna(ner_value) or str(ner_value).strip().lower() == "none":
-        return []
-    return [part.split(":", 1)[0].strip().upper() for part in str(ner_value).split("|") if ":" in part]
 
 
 def load_and_split():
@@ -20,7 +15,9 @@ def load_and_split():
     Split labels come from data/processed/splits.csv (70/15/15). The 'val'
     slice is unused - LinearSVC has no early stopping.
     """
-    df = pd.read_csv(DATA_PATH, encoding="utf-8").dropna(subset=["tweet", *TASKS]).reset_index(drop=True)
+    df = pd.read_csv(DATA_PATH, encoding="utf-8")
+    df = df[df["lang"] == "en"]
+    df = df.dropna(subset=["tweet", *TASKS]).reset_index(drop=True)
     df["ner"] = df["ner"].fillna("none")
 
     if "split" not in df.columns:
@@ -42,7 +39,22 @@ def build_label_encoders(train_df):
 
 
 def encode_targets(df, encoders, binarizer):
-    return ({task: encoders[task].transform(df[task].astype(str)) for task in TASKS}, binarizer.transform(df["ner"].map(parse_entity_types)))
+    """Encode targets for one dataframe.
+
+    Returns a (single_targets, ner_targets) pair: an integer label array per
+    task in TASKS, and a binary matrix over ENTITY_TYPES marking which entity
+    types each tweet mentions.
+
+    The NER target comes from findable_entity_types(), the same gold the shared
+    evaluation metric uses, so the model trains on what it is scored on.
+    """
+    entity_types = [
+        findable_entity_types(tweet, ner) for tweet, ner in zip(df["tweet"], df["ner"], strict=True)
+    ]
+    return (
+        {task: encoders[task].transform(df[task].astype(str)) for task in TASKS},
+        binarizer.transform(entity_types),
+    )
 
 
 def build_vectorizer():

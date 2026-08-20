@@ -18,6 +18,7 @@ _HASHTAG_SYMBOL_RE = re.compile(r"#(\w+)")
 _NUMBER_RE = re.compile(r"\d+")
 _WHITESPACE_RE = re.compile(r"\s+")
 _RT_PREFIX_RE = re.compile(r"^RT\s+@\w+:\s*")
+_NON_ALNUM_RE = re.compile(r"[^a-z0-9 ]")
 
 
 def unescape_html(text: str) -> str:
@@ -90,3 +91,41 @@ def remove_numbers(text: str) -> str:
 def normalize_whitespace(text: str) -> str:
     """Collapse runs of spaces/newlines/tabs into single spaces and trim."""
     return _WHITESPACE_RE.sub(" ", text).strip()
+
+
+def canonical_key(text: str) -> str:
+    """Reduce a tweet to a model-independent identity string.
+
+    Decodes HTML entities, lowercases, drops URLs and @mentions, replaces every
+    non-alphanumeric character with a space, and collapses whitespace. Two
+    tweets differing only in case, punctuation, links or mentions produce the
+    same key.
+
+    Used by base_cleaning.py to decide which rows survive deduplication, and by
+    metrics.py to match entity names against tweet text. Never used as model
+    input — the surviving row keeps its original 'tweet' text.
+
+        canonical_key("RT @fifa: MESSI scores!! https://t.co/x")  ->  "messi scores"
+    """
+    text = unescape_html(str(text)).lower()
+    text = remove_links(text)
+    text = remove_mentions(text)
+    text = _NON_ALNUM_RE.sub(" ", text)
+    return normalize_whitespace(text)
+
+
+def group_key(canonical: str) -> str:
+    """Reduce a canonical key to a near-duplicate cluster signature.
+
+    Takes the tweet's content words (longer than two characters), deduplicates
+    them and sorts them, so tweets with the same words in any order — or
+    differing only by short filler words — map to the same signature. Falls back
+    to the canonical key when no word qualifies.
+
+    splits.py keeps rows sharing a signature in the same train/val/test split.
+
+        group_key("messi scores again")  ->  "again messi scores"
+        group_key("again messi scores")  ->  "again messi scores"
+    """
+    words = sorted({word for word in canonical.split() if len(word) > 2})
+    return " ".join(words) or canonical

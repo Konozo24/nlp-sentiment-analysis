@@ -5,6 +5,8 @@ Run: ``python -m src.models.svm.train``
 
 import joblib
 
+from src.models.metrics import save_metrics
+
 from .config import ARTIFACTS, ENTITY_TYPES, MODEL_DIR, TASKS
 from .data import build_label_encoders, build_vectorizer, encode_targets, load_and_split
 from .evaluate import evaluate
@@ -32,9 +34,10 @@ def main():
     MODEL_DIR.mkdir(parents=True, exist_ok=True)
     for name, artifact in zip(ARTIFACTS, (vectorizer, encoders, binarizer, models)):
         joblib.dump(artifact, MODEL_DIR / name)
-    report = evaluate(models, vectorizer, encoders, binarizer, test_df)
+    report, headlines = evaluate(models, vectorizer, encoders, binarizer, test_df)
     print(report)
     (MODEL_DIR / "metrics.txt").write_text(report, encoding="utf-8")
+    save_metrics("svm", len(test_df), headlines, MODEL_DIR)
     print(f"Saved artifacts and metrics to {MODEL_DIR}")
 
 

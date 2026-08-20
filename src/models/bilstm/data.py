@@ -180,13 +180,10 @@ def make_loader(
 ) -> DataLoader:
     """Build a DataLoader over the tweets.
 
-    shuffle=True reshuffles every epoch, which is the point of shuffling. The
-    previous hand-rolled generator called df.sample(random_state=SEED) with a
-    constant seed, so every epoch saw the identical permutation — a shuffle in
-    name only. Reproducibility comes from seeding the global RNG once in
-    train.py, not from freezing the order.
+    shuffle=True draws a fresh permutation each epoch; reproducibility comes
+    from seeding the global RNG once in train.py, not from fixing the order.
 
-    num_workers defaults to 0: the whole dataset is already tensors in memory,
+    num_workers defaults to 0 because the dataset is already tensors in memory,
     so worker processes would only add Windows spawn overhead.
     """
     return DataLoader(

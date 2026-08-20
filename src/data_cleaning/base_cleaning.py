@@ -1,9 +1,16 @@
-"""Shared structural cleaning of merged_tweets.csv -> cleaned_tweets.csv.
+"""Build cleaned_tweets.csv, the single row set all three models train on.
 
-Structural only (drop empties, strip 'RT @user:', normalize whitespace, dedup);
-each model's preprocess_*.py adds its own text cleaning on top. Also stamps the
-train/val/test `split` per tweet id here, before model-specific dedup, so all
-three models share the same test set.
+Reads merged_tweets.csv and, in order:
+  1. decodes HTML entities, strips 'RT @user:' prefixes, normalizes whitespace
+  2. drops rows that are empty once normalized, and deduplicates on
+     utils.canonical_key()
+  3. keeps only lang == 'en'
+  4. stamps each row with its train/val/test `split` (splits.py)
+
+Steps 2 and 3 are the only places in the project that change the row count, and
+they run before step 4. Each model's preprocess_*.py then rewrites the text
+without adding or removing rows, so all three models share one row set and one
+split.
 
 Run:  python -m src.data_cleaning.base_cleaning
 """
@@ -13,7 +20,7 @@ from pathlib import Path
 import pandas as pd
 
 from .splits import attach_split_column, summarise
-from .utils import normalize_whitespace, remove_rt_prefix, unescape_html
+from .utils import canonical_key, normalize_whitespace, remove_rt_prefix, unescape_html
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 PROCESSED_DIR = PROJECT_ROOT / "data" / "processed"
@@ -22,19 +29,24 @@ CLEANED_PATH = PROCESSED_DIR / "cleaned_tweets.csv"
 
 
 def structural_clean(df: pd.DataFrame) -> pd.DataFrame:
-    """Row-level cleaning that every model wants, with no text mutation
-    beyond whitespace/RT-prefix normalization."""
+    """Normalize tweet text, then drop empty and duplicate rows.
+
+    Text changes are limited to decoding HTML entities ('&amp;' -> '&'),
+    stripping the 'RT @user:' retweet prefix, and collapsing whitespace, so a
+    retweet and its original become the same string.
+
+    Duplicates are judged by utils.canonical_key(), which ignores case,
+    punctuation, links and mentions — a stricter test than comparing the tweet
+    text itself. Adds a 'canonical' column holding that key, which splits.py
+    reuses to group near-duplicates.
+    """
     df = df.copy()
     df["tweet"] = df["tweet"].fillna("").astype(str)
-
-    # Strip the 'RT @user:' prefix so a retweet and its original tweet
-    # become identical strings and collapse in the dedup step below.
-    # HTML entities ('&amp;', '&lt;3') are decoded so no model ever sees
-    # literal 'amp'/'lt' tokens.
     df["tweet"] = df["tweet"].map(unescape_html).map(remove_rt_prefix).map(normalize_whitespace)
 
-    df = df[df["tweet"].str.len() > 0]
-    df = df.drop_duplicates(subset="tweet", keep="first")
+    df["canonical"] = df["tweet"].map(canonical_key)
+    df = df[df["canonical"].str.len() > 0]
+    df = df.drop_duplicates(subset="canonical", keep="first")
     return df.reset_index(drop=True)
 
 
@@ -54,8 +66,9 @@ def build_cleaned_dataset(merged_path: Path = MERGED_PATH, out_path: Path = CLEA
     df = df[df["lang"] == "en"].reset_index(drop=True)
     print(f"Filtered {before_lang} rows -> {len(df)} keeping lang == 'en'")
 
-    # stamp the shared train/val/test assignment before any model sees the data
-    df = attach_split_column(df)
+    # 'canonical' is dropped after the split is assigned — it identifies rows,
+    # and is not a feature.
+    df = attach_split_column(df).drop(columns="canonical")
     summarise(df)
 
     out_path.parent.mkdir(parents=True, exist_ok=True)

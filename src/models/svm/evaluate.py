@@ -1,6 +1,18 @@
-"""Evaluate trained SVM artifacts on the reproducible test split."""
+"""Score the trained SVM artifacts on the test split.
 
-from sklearn.metrics import accuracy_score, classification_report, f1_score, precision_score, recall_score
+Prints a report and writes it to metrics.txt, plus metrics.json for
+scripts/compare_models.py. All four task metrics come from
+src/models/metrics.py, shared with the other two models.
+
+Run:  python -m src.models.svm.evaluate
+"""
+
+from src.models.metrics import (
+    entity_presence_report,
+    findable_entity_types,
+    save_metrics,
+    single_label_report,
+)
 
 from .config import ENTITY_TYPES, MODEL_DIR, TASKS
 from .data import encode_targets, load_and_split
@@ -14,25 +26,52 @@ def evaluate(models, vectorizer, encoders, binarizer, test_df):
         import cudf
         texts = cudf.Series(texts.reset_index(drop=True))
     features = vectorizer.transform(texts)
-    single_targets, ner_targets = encode_targets(test_df, encoders, binarizer)
-    lines = ["========== MODEL EVALUATION =========="]
+    single_targets, _ = encode_targets(test_df, encoders, binarizer)
+
+    lines = ["========== MODEL EVALUATION (SVM) ==========", f"Test rows: {len(test_df)}"]
+    headlines = {}
+
     for task in TASKS:
         predictions = to_numpy(models[task].predict(features))
-        lines.extend([f"\n----- {task.upper()} -----", f"Accuracy: {accuracy_score(single_targets[task], predictions):.4f}", classification_report(single_targets[task], predictions, target_names=encoders[task].classes_, zero_division=0)])
-    predictions = to_numpy(models["ner"].predict(features))
-    lines.extend(["----- NER (entity-type presence, multi-label) -----", f"Exact-match accuracy: {accuracy_score(ner_targets, predictions):.4f}", f"Micro F1: {f1_score(ner_targets, predictions, average='micro', zero_division=0):.4f}", f"Macro F1: {f1_score(ner_targets, predictions, average='macro', zero_division=0):.4f}"])
-    for index, entity_type in enumerate(ENTITY_TYPES):
-        lines.append(f"{entity_type}: precision {precision_score(ner_targets[:, index], predictions[:, index], zero_division=0):.4f}, recall {recall_score(ner_targets[:, index], predictions[:, index], zero_division=0):.4f}")
-    return "\n".join(lines)
+        report, headline = single_label_report(
+            single_targets[task], predictions, list(encoders[task].classes_)
+        )
+        headlines[task] = headline
+        lines.extend([
+            f"\n===== {task.upper()} =====",
+            f"Accuracy: {headline['accuracy']:.4f}  "
+            f"macro P {headline['macro_precision']:.4f}  "
+            f"R {headline['macro_recall']:.4f}  F1 {headline['macro_f1']:.4f}",
+            report,
+        ])
+
+    # the one-vs-rest head already predicts entity-type presence, so its output
+    # feeds the shared metric directly
+    ner_predictions = to_numpy(models["ner"].predict(features))
+    predicted_types = [
+        [ENTITY_TYPES[i] for i, present in enumerate(row) if present] for row in ner_predictions
+    ]
+    true_types = [
+        findable_entity_types(tweet, ner)
+        for tweet, ner in zip(test_df["tweet"], test_df["ner"], strict=True)
+    ]
+    report, headline = entity_presence_report(true_types, predicted_types)
+    headlines["ner"] = headline
+    lines.extend([f"\n===== NER =====", report])
+
+    return "\n".join(lines), headlines
 
 
 def main():
     models, vectorizer, encoders, binarizer = load_model()
     _, test_df = load_and_split()
-    report = evaluate(models, vectorizer, encoders, binarizer, test_df)
+    report, headlines = evaluate(models, vectorizer, encoders, binarizer, test_df)
     print(report)
+
     MODEL_DIR.mkdir(parents=True, exist_ok=True)
     (MODEL_DIR / "metrics.txt").write_text(report, encoding="utf-8")
+    save_metrics("svm", len(test_df), headlines, MODEL_DIR)
+    print(f"\nSaved to {MODEL_DIR / 'metrics.txt'} and metrics.json")
 
 
 if __name__ == "__main__":

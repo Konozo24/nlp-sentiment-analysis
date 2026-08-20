@@ -22,10 +22,15 @@ def run_steps(text: str, steps: list[Step]) -> str:
 
 
 def preprocess_dataset(steps: list[Step], out_name: str, cleaned_path: Path = CLEANED_PATH) -> pd.DataFrame:
-    """Apply a step chain to the cleaned dataset and save the result.
+    """Apply a step chain to cleaned_tweets.csv and save the result.
 
-    Rows whose text becomes empty after cleaning (e.g. a tweet that was
-    only a URL) are dropped, as are duplicates created by the cleaning.
+    Rewrites the 'tweet' column and leaves every other column, and the row
+    count, untouched — the output has the same ids and the same `split` labels
+    as the input, which is what lets the three models be compared on one test
+    set. Raises AssertionError if a step chain changes the row count; row
+    filtering belongs in base_cleaning.py.
+
+    Warns, but does not drop, when a step chain empties a tweet's text.
     """
     if not cleaned_path.exists():
         raise FileNotFoundError(
@@ -34,12 +39,19 @@ def preprocess_dataset(steps: list[Step], out_name: str, cleaned_path: Path = CL
 
     df = pd.read_csv(cleaned_path, encoding="utf-8")
     df["tweet"] = df["tweet"].fillna("").astype(str)
-    df["tweet"] = df["tweet"].map(lambda t: run_steps(t, steps))
 
     before = len(df)
-    df = df[df["tweet"].str.len() > 0]
-    df = df.drop_duplicates(subset="tweet", keep="first").reset_index(drop=True)
-    print(f"{out_name}: {before} rows -> {len(df)} after cleaning")
+    df["tweet"] = df["tweet"].map(lambda t: run_steps(t, steps))
+    if len(df) != before:
+        raise AssertionError(
+            f"{out_name}: preprocessing changed the row count ({before} -> {len(df)}). "
+            "Row filtering belongs in base_cleaning.py, not here."
+        )
+
+    empty = int((df["tweet"].str.len() == 0).sum())
+    if empty:
+        print(f"{out_name}: warning — {empty} rows cleaned to empty text (kept, to hold the row set)")
+    print(f"{out_name}: {len(df)} rows (unchanged, as required)")
 
     out_path = PROCESSED_DIR / out_name
     out_path.parent.mkdir(parents=True, exist_ok=True)
