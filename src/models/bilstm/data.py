@@ -20,7 +20,7 @@ place for it — rather than being baked into a hand-rolled batch generator.
 import json  # noqa: I001 — import order below is intentional (see next line)
 
 # sklearn must import before torch, or Windows raises a heap-corruption crash
-from sklearn.model_selection import train_test_split
+import sklearn  # noqa: F401
 
 import numpy as np
 import pandas as pd
@@ -28,7 +28,7 @@ import torch
 from torch import nn
 from torch.utils.data import DataLoader, Dataset
 
-from .config import DATA_PATH, EMBEDDING_PATH, MAX_LEN, SEED, TASKS, VOCAB_PATH
+from .config import DATA_PATH, EMBEDDING_PATH, MAX_LEN, TASKS, VOCAB_PATH
 from .ner_bio import add_bio_tags
 
 PAD_ID, UNK_ID = 0, 1
@@ -40,27 +40,24 @@ PAD_ID, UNK_ID = 0, 1
 
 
 def load_and_split() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    """Read the CSV, add BIO tags, and split 70/15/15 (always the same split).
+    """Read the CSV, add BIO tags, and return the shared train/val/test split.
 
-    The seed makes THIS model's split reproducible across train/evaluate runs.
-    It does NOT give the three team models a shared test set: each
-    preprocess_*.py dedups differently, so the row counts differ and
-    train_test_split — which selects by position — lands on different tweets.
-    Measured overlap with RobertaCNN's test set is only 15.8%. Fixing that
-    needs one id-based split shared by all three models.
+    Split labels come from data/processed/splits.csv (70/15/15).
     """
     df = pd.read_csv(DATA_PATH, encoding="utf-8")
     df = df[df["lang"] == "en"]  # project scope: English tweets only
     df = df.dropna(subset=["tweet", *TASKS]).reset_index(drop=True)
-    df = add_bio_tags(df)
 
-    # first cut 30% off, then split that 30% in half -> 70/15/15.
-    train_df, rest = train_test_split(
-        df, test_size=0.30, stratify=df["sentiment"], random_state=SEED
-    )
-    val_df, test_df = train_test_split(
-        rest, test_size=0.50, stratify=rest["sentiment"], random_state=SEED
-    )
+    if "split" not in df.columns:
+        raise ValueError(
+            f"{DATA_PATH} has no 'split' column — re-run "
+            "'python -m src.data_cleaning.base_cleaning' then "
+            "'python -m src.data_cleaning.preprocess_bilstm'"
+        )
+
+    df = add_bio_tags(df)
+    parts = [df[df["split"] == name].reset_index(drop=True) for name in ("train", "val", "test")]
+    train_df, val_df, test_df = parts
     print(f"Split: train {len(train_df)}, val {len(val_df)}, test {len(test_df)}")
     return train_df, val_df, test_df
 

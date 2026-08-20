@@ -9,8 +9,7 @@ MODEL_DIR = PROJECT_ROOT / "data" / "models" / "svm"
 # lets predict.py use them until the reorganised trainer is run once.
 LEGACY_MODEL_DIR = Path(__file__).resolve().parent
 
-SEED = 42
-TEST_SIZE = 0.20
+SEED = 42  # train/val/test assignment lives in data/processed/splits.csv
 TASKS = ["sentiment", "emotion", "topic"]
 ENTITY_TYPES = ["PER", "ORG", "LOC", "EVENT"]
 TFIDF_KWARGS = {"lowercase": True, "stop_words": "english", "ngram_range": (1, 2), "min_df": 2, "max_df": 0.95, "sublinear_tf": True}

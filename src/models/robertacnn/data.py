@@ -6,23 +6,32 @@ subword tokenizer works the same way regardless of what pools the words.
 
 import json
 
-from sklearn.model_selection import train_test_split
-
 import pandas as pd
 import torch
 
-from .config import DATA_PATH, MAX_LEN, MAX_SUBWORDS, SEED, TASKS
+from .config import DATA_PATH, MAX_LEN, MAX_SUBWORDS, SEED, TASKS  # noqa: F401 — SEED used by make_batches
 from .ner_bio import add_bio_tags
 from src.data_cleaning.preprocess_robertacnn import clean_for_robertacnn
 
 def load_and_split():
+    """Read the CSV, add BIO tags, and return the shared train/val/test split.
+
+    Split labels come from data/processed/splits.csv (70/15/15).
+    """
     df = pd.read_csv(DATA_PATH, encoding="utf-8")
     df = df[df["lang"] == "en"]
     df = df.dropna(subset=["tweet", *TASKS]).reset_index(drop=True)
-    df = add_bio_tags(df, clean_for_robertacnn)
 
-    train_df, rest = train_test_split(df, test_size=0.30, stratify=df["sentiment"], random_state=SEED)
-    val_df, test_df = train_test_split(rest, test_size=0.50, stratify=rest["sentiment"], random_state=SEED)
+    if "split" not in df.columns:
+        raise ValueError(
+            f"{DATA_PATH} has no 'split' column — re-run "
+            "'python -m src.data_cleaning.base_cleaning' then "
+            "'python -m src.data_cleaning.preprocess_robertacnn'"
+        )
+
+    df = add_bio_tags(df, clean_for_robertacnn)
+    parts = [df[df["split"] == name].reset_index(drop=True) for name in ("train", "val", "test")]
+    train_df, val_df, test_df = parts
     print(f"Split: train {len(train_df)}, val {len(val_df)}, test {len(test_df)}")
     return train_df, val_df, test_df
 

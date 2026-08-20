@@ -1,15 +1,9 @@
-"""Shared, model-agnostic structural cleaning of the merged dataset.
+"""Shared structural cleaning of merged_tweets.csv -> cleaned_tweets.csv.
 
-Input:  data/processed/merged_tweets.csv  (produced by scripts/merge_datasets.py,
-        which combines the 4 World Cup year files into one CSV)
-Output: data/processed/cleaned_tweets.csv
-
-Cleaning here is structural only — drop empty rows, strip the 'RT @user:'
-retweet prefix, normalize whitespace, and dedup.
-RAW: each member's preprocess_*.py applies its own model-specific text
-cleaning on top of this single shared file, so all three models train on
-the exact same underlying rows and the Accuracy/Precision/Recall/F1
-comparison between models is fair.
+Structural only (drop empties, strip 'RT @user:', normalize whitespace, dedup);
+each model's preprocess_*.py adds its own text cleaning on top. Also stamps the
+train/val/test `split` per tweet id here, before model-specific dedup, so all
+three models share the same test set.
 
 Run:  python -m src.data_cleaning.base_cleaning
 """
@@ -18,6 +12,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from .splits import attach_split_column, summarise
 from .utils import normalize_whitespace, remove_rt_prefix, unescape_html
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -58,6 +53,10 @@ def build_cleaned_dataset(merged_path: Path = MERGED_PATH, out_path: Path = CLEA
     before_lang = len(df)
     df = df[df["lang"] == "en"].reset_index(drop=True)
     print(f"Filtered {before_lang} rows -> {len(df)} keeping lang == 'en'")
+
+    # stamp the shared train/val/test assignment before any model sees the data
+    df = attach_split_column(df)
+    summarise(df)
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     # utf-8-sig adds a BOM so Excel displays emoji/non-ASCII correctly
