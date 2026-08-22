@@ -29,25 +29,42 @@ def load_model():
     return model, tokenizer, labels
 
 
-def predict(tweet: str, model, tokenizer, labels):
+@torch.no_grad()
+def predict_structured(tweet: str, model, tokenizer, labels):
     words = clean_for_robertacnn(tweet).split()[:MAX_LEN]
     if not words:
-        print("  (nothing left after cleaning)")
-        return
+        return None
 
     ner_ids = {tag: i for i, tag in enumerate(labels["ner"])}
     batch = encode_batch([words], [["O"] * len(words)], tokenizer, ner_ids)
     batch = {name: tensor.to(DEVICE) for name, tensor in batch.items()}
-    with torch.no_grad():
-        out = model(batch["input_ids"], batch["attention_mask"], batch["word_index"], batch["word_mask"])
+    out = model(batch["input_ids"], batch["attention_mask"], batch["word_index"], batch["word_mask"])
 
+    result = {"words": words, "oov": [], "tasks": {}}
     for task in TASKS:
         probs = torch.softmax(out[task][0], dim=-1)
-        best = probs.argmax().item()
-        print(f"  {task:9s}: {labels[task][best]}  ({probs[best]:.0%} sure)")
+        result["tasks"][task] = {
+            "label": labels[task][probs.argmax().item()],
+            "confidence": probs.max().item(),
+            "distribution": {labels[task][i]: probs[i].item() for i in range(len(labels[task]))},
+        }
 
     tag_ids = model.crf.decode(out["ner"], mask=batch["word_mask"])[0]
-    tagged = [f"{w}[{labels['ner'][t]}]" if labels["ner"][t] != "O" else w for w, t in zip(words, tag_ids)]
+    result["ner"] = [(word, labels["ner"][tag]) for word, tag in zip(words, tag_ids, strict=True)]
+    return result
+
+
+def predict(tweet: str, model, tokenizer, labels):
+    result = predict_structured(tweet, model, tokenizer, labels)
+    if result is None:
+        print("  (nothing left after cleaning)")
+        return
+
+    for task in TASKS:
+        info = result["tasks"][task]
+        print(f"  {task:9s}: {info['label']}  ({info['confidence']:.0%} sure)")
+
+    tagged = [f"{w}[{tag}]" if tag != "O" else w for w, tag in result["ner"]]
     print(f"  entities : {' '.join(tagged)}")
 
 
