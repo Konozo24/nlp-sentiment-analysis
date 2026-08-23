@@ -37,3 +37,4 @@ en_core_web_trf @ https://github.com/explosion/spacy-models/releases/download/en
 
 # Prototype UI
 streamlit==1.61.1
+altair==6.2.2

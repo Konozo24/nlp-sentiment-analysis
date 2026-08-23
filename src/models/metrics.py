@@ -180,12 +180,35 @@ def save_metrics(model_name: str, n_test: int, headlines: dict, model_dir) -> No
     )
 
 
+def save_predictions(model_dir, ids, gold: dict[str, list[str]], pred: dict[str, list[str]]) -> None:
+    """Write predictions.csv (id, task, gold, pred) for the single-label tasks.
+
+    Long format, one row per (tweet, task), label strings rather than ids so
+    the file is readable without the encoder that produced it.
+    """
+    assert gold.keys() == pred.keys(), "gold and pred must cover the same tasks"
+    rows = []
+    for task in gold:
+        assert len(ids) == len(gold[task]) == len(pred[task]), (
+            f"row-count mismatch on task {task!r}: "
+            f"{len(ids)} ids, {len(gold[task])} gold, {len(pred[task])} pred"
+        )
+        rows += [
+            {"id": row_id, "task": task, "gold": g, "pred": p}
+            for row_id, g, p in zip(ids, gold[task], pred[task], strict=True)
+        ]
+
+    model_dir.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame(rows).to_csv(model_dir / "predictions.csv", index=False, encoding="utf-8")
+
+
 __all__ = [
     "ENTITY_TYPES",
     "entity_presence_report",
     "findable_entity_types",
     "parse_entity_types",
     "save_metrics",
+    "save_predictions",
     "single_label_report",
     "types_from_bio",
 ]

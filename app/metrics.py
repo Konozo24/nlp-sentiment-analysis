@@ -4,7 +4,9 @@ Pure functions over text — no Streamlit — so the report format lives in one
 place and can be tested without running the app.
 """
 
+import json
 import re
+from pathlib import Path
 
 import pandas as pd
 
@@ -12,7 +14,6 @@ import pandas as pd
 SUMMARY_ROWS = ("accuracy", "macro avg", "weighted avg")
 
 _TASK_BLOCK = re.compile(r"=====\s*(\w+)\s*=====")
-_ACCURACY = re.compile(r"Accuracy:\s*([\d.]+)")
 _ENTITY_ONLY = re.compile(
     r"Entity tags only.*?precision ([\d.]+), recall ([\d.]+), F1 ([\d.]+)"
 )
@@ -21,15 +22,21 @@ _PER_TYPE = re.compile(
 )
 
 
+def load_headlines(model_dir) -> dict | None:
+    """Read metrics.json: the structured accuracy/precision/recall/F1 behind metrics.txt."""
+    path = Path(model_dir) / "metrics.json"
+    if not path.exists():
+        return None
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
 def parse_report(text: str) -> dict[str, dict]:
-    """Split the report into per-task accuracy, per-class table, and entity-only F1."""
+    """Split the report into each task's per-class table and entity-only F1."""
     tasks = {}
     blocks = _TASK_BLOCK.split(text)[1:]  # alternating name, body
     for name, body in zip(blocks[0::2], blocks[1::2], strict=False):
-        accuracy = _ACCURACY.search(body)
         entity_only = _ENTITY_ONLY.search(body)
         tasks[name.lower()] = {
-            "accuracy": float(accuracy.group(1)) if accuracy else None,
             "classes": _parse_class_table(body),
             "entity_only": (
                 {

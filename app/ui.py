@@ -4,15 +4,20 @@ Model-agnostic on purpose: nothing here imports torch, sklearn, or any
 model-specific module, so importing this file is always cheap.
 """
 
+from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
+import altair as alt
 import pandas as pd
 import streamlit as st
 
-from app.metrics import parse_entity_presence, parse_report
+from app.metrics import load_headlines, parse_entity_presence, parse_report
 
 # the three sentence-level tasks, in the order every page shows them
 TASKS = ("sentiment", "emotion", "topic")
+
+SENTIMENT_COLORS = {"positive": "orange", "neutral": "blue", "negative": "red"}
 
 TASK_ORDER = (*TASKS, "ner")
 
@@ -24,6 +29,32 @@ SAMPLE_TWEETS = [
 ]
 
 
+def safe_load(label: str, model_dir: Path, load: Callable[[], Any]) -> Any | None:
+    """Load a model's artifacts, turning a missing or corrupt checkpoint into an
+    actionable st.error instead of a traceback mid-demo."""
+    try:
+        return load()
+    except (FileNotFoundError, OSError) as error:
+        st.error(f"Couldn't load {label}'s artifacts from `{model_dir}`: {error}")
+        return None
+
+
+# sentinel distinguishing "predict() raised" from predict()'s own None, which
+# means "nothing left to analyze after cleaning" — the two need different messages
+PREDICT_FAILED = object()
+
+
+def safe_predict(label: str, predict: Callable[[str, Any], dict | None], tweet: str, bundle: Any):
+    """Run a model's predict(), turning any exception into an st.error instead of a
+    crash — broad on purpose, since predict() is model-specific code this layer
+    doesn't otherwise validate. Returns PREDICT_FAILED on error."""
+    try:
+        return predict(tweet, bundle)
+    except Exception as error:  # noqa: BLE001 — last line of defense before the UI
+        st.error(f"{label} failed to analyze this tweet ({error}).")
+        return PREDICT_FAILED
+
+
 def render_task_metrics(tasks: dict) -> None:
     """One metric per sentence-level task: predicted label plus confidence."""
     with st.container(horizontal=True):
@@ -33,7 +64,11 @@ def render_task_metrics(tasks: dict) -> None:
 
 
 def render_performance_tab(model_dir: Path) -> None:
-    """Accuracy, per-class tables, and entity-presence numbers from that model's metrics.txt."""
+    """Accuracy/precision/recall/F1, per-class tables, and entity-presence numbers.
+
+    Headline numbers (the four requirement-f metrics) come from metrics.json;
+    the per-class tables only exist in metrics.txt, so both are read.
+    """
     report_text = _read_metrics(str(model_dir))
     if report_text is None:
         st.error(f"No metrics.txt found in {model_dir}. Run that model's evaluate.py first.")
@@ -43,10 +78,12 @@ def render_performance_tab(model_dir: Path) -> None:
     if oov_line:
         st.caption(oov_line)
 
-    tasks = parse_report(report_text)
-    _render_accuracy_row(tasks)
+    headlines = load_headlines(model_dir)
+    if headlines:
+        _render_metrics_summary(headlines)
 
     st.divider()
+    tasks = parse_report(report_text)
     for task in TASK_ORDER:
         _render_task_classes(task, tasks.get(task))
 
@@ -63,23 +100,61 @@ def render_dataset_tab(data_path: Path, label: str) -> None:
     (id, tweet, date, lang, year, sentiment, emotion, topic, ner, split).
     """
     df = _read_dataset(str(data_path))
+    if df is None:
+        st.error(f"No dataset found at {data_path}. Run that model's preprocess_*.py first.")
+        return
+
     st.write(f"**{len(df):,} tweets** in `{data_path.name}` (English only, cleaned and deduplicated).")
 
-    charts = [
-        ("By year", df["year"].value_counts().sort_index()),
-        ("Sentiment distribution", df["sentiment"].value_counts()),
-        ("Emotion distribution", df["emotion"].value_counts()),
-        ("Topic distribution", df["topic"].value_counts()),
-    ]
-    for first, second in (charts[:2], charts[2:]):
-        for col, (title, counts) in zip(st.columns(2), (first, second), strict=True):
-            col.write(f"**{title}**")
-            col.bar_chart(counts)
+    year_col, sentiment_col = st.columns(2)
+    with year_col:
+        st.write("**By year**")
+        st.bar_chart(df["year"].value_counts().sort_index())
+    with sentiment_col:
+        st.write("**Sentiment distribution**")
+        _render_pie(df["sentiment"].value_counts(), colors=SENTIMENT_COLORS)
+
+    emotion_col, topic_col = st.columns(2)
+    with emotion_col:
+        st.write("**Emotion distribution**")
+        st.bar_chart(df["emotion"].value_counts())
+    with topic_col:
+        st.write("**Topic distribution**")
+        st.bar_chart(df["topic"].value_counts())
 
     st.write(f"**Sample rows** (tweet text shown is already {label}-cleaned)")
     st.dataframe(
         df[["tweet", "sentiment", "emotion", "topic"]].sample(min(10, len(df)), random_state=1)
     )
+
+
+def _render_pie(counts: pd.Series, colors: dict[str, str] | None = None) -> None:
+    data = counts.rename("count").rename_axis("class").reset_index()
+    data["share"] = data["count"] / data["count"].sum()
+
+    color = (
+        alt.Color(
+            "class:N",
+            legend=alt.Legend(title=None),
+            scale=alt.Scale(domain=list(colors.keys()), range=list(colors.values())),
+        )
+        if colors
+        else alt.Color("class:N", legend=alt.Legend(title=None))
+    )
+    chart = (
+        alt.Chart(data)
+        .mark_arc()
+        .encode(
+            theta=alt.Theta("count:Q", stack=True),
+            color=color,
+            tooltip=[
+                alt.Tooltip("class:N", title="Class"),
+                alt.Tooltip("count:Q", title="Count"),
+                alt.Tooltip("share:Q", title="Share", format=".1%"),
+            ],
+        )
+    )
+    st.altair_chart(chart)
 
 
 @st.cache_data(show_spinner=False)
@@ -89,21 +164,44 @@ def _read_metrics(model_dir: str) -> str | None:
 
 
 @st.cache_data(show_spinner="Reading dataset...")
-def _read_dataset(data_path: str) -> pd.DataFrame:
-    return pd.read_csv(data_path, encoding="utf-8")
+def _read_dataset(data_path: str) -> pd.DataFrame | None:
+    path = Path(data_path)
+    return pd.read_csv(path, encoding="utf-8") if path.exists() else None
 
 
 def _find_line(text: str, prefix: str) -> str | None:
     return next((line.strip() for line in text.splitlines() if prefix in line), None)
 
 
-def _render_accuracy_row(tasks: dict) -> None:
-    scored = [t for t in TASK_ORDER if tasks.get(t, {}).get("accuracy") is not None]
-    if not scored:
+def _render_metrics_summary(headlines: dict) -> None:
+    """Accuracy, macro precision/recall/F1, and weighted F1 — the metrics requirement (f)
+    names — one row per sentence-level task. NER isn't a single-label task, so it keeps
+    its own micro/macro/exact-match framing in the entity-presence section below."""
+    rows = {
+        task.capitalize(): {
+            "Accuracy": headlines[task]["accuracy"],
+            "Macro precision": headlines[task]["macro_precision"],
+            "Macro recall": headlines[task]["macro_recall"],
+            "Macro F1": headlines[task]["macro_f1"],
+            "Weighted F1": headlines[task]["weighted_f1"],
+        }
+        for task in TASKS
+        if task in headlines
+    }
+    if not rows:
         return
-    with st.container(horizontal=True):
-        for task in scored:
-            st.metric(task.upper(), f"{tasks[task]['accuracy']:.1%}", "accuracy")
+
+    df = pd.DataFrame(rows).T
+    st.dataframe(
+        df,
+        column_config={
+            col: st.column_config.NumberColumn(format="percent") for col in df.columns
+        },
+    )
+    st.caption(
+        "Macro is the headline average: classes are skewed and all three models train "
+        "with inverse-frequency class weights, so macro matches the training objective."
+    )
 
 
 def _render_task_classes(task: str, task_metrics: dict | None) -> None:

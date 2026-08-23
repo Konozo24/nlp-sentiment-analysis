@@ -11,6 +11,7 @@ from src.models.metrics import (
     entity_presence_report,
     findable_entity_types,
     save_metrics,
+    save_predictions,
     single_label_report,
 )
 
@@ -30,6 +31,8 @@ def evaluate(models, vectorizer, encoders, binarizer, test_df):
 
     lines = ["========== MODEL EVALUATION (SVM) ==========", f"Test rows: {len(test_df)}"]
     headlines = {}
+    gold_labels: dict[str, list[str]] = {}
+    pred_labels: dict[str, list[str]] = {}
 
     for task in TASKS:
         predictions = to_numpy(models[task].predict(features))
@@ -37,6 +40,8 @@ def evaluate(models, vectorizer, encoders, binarizer, test_df):
             single_targets[task], predictions, list(encoders[task].classes_)
         )
         headlines[task] = headline
+        gold_labels[task] = list(encoders[task].inverse_transform(single_targets[task]))
+        pred_labels[task] = list(encoders[task].inverse_transform(predictions))
         lines.extend([
             f"\n===== {task.upper()} =====",
             f"Accuracy: {headline['accuracy']:.4f}  "
@@ -59,19 +64,22 @@ def evaluate(models, vectorizer, encoders, binarizer, test_df):
     headlines["ner"] = headline
     lines.extend([f"\n===== NER =====", report])
 
-    return "\n".join(lines), headlines
+    return "\n".join(lines), headlines, gold_labels, pred_labels
 
 
 def main():
     models, vectorizer, encoders, binarizer = load_model()
     _, test_df = load_and_split()
-    report, headlines = evaluate(models, vectorizer, encoders, binarizer, test_df)
+    report, headlines, gold_labels, pred_labels = evaluate(
+        models, vectorizer, encoders, binarizer, test_df
+    )
     print(report)
 
     MODEL_DIR.mkdir(parents=True, exist_ok=True)
     (MODEL_DIR / "metrics.txt").write_text(report, encoding="utf-8")
     save_metrics("svm", len(test_df), headlines, MODEL_DIR)
-    print(f"\nSaved to {MODEL_DIR / 'metrics.txt'} and metrics.json")
+    save_predictions(MODEL_DIR, list(test_df["id"]), gold_labels, pred_labels)
+    print(f"\nSaved to {MODEL_DIR / 'metrics.txt'}, metrics.json, and predictions.csv")
 
 
 if __name__ == "__main__":

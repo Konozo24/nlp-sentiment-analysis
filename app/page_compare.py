@@ -8,11 +8,13 @@ from pathlib import Path
 
 import streamlit as st
 
+from app.language import warn_if_not_english
 from app.ner import format_entities, has_entities
 from app.registry import PROJECT_ROOT, ModelSpec
-from app.ui import TASKS
+from app.ui import PREDICT_FAILED, TASKS, safe_load, safe_predict
 
 COMPARISON_MD = PROJECT_ROOT / "data" / "models" / "comparison.md"
+MAX_TWEET_CHARS = 500
 
 
 def render(specs: list[ModelSpec]) -> None:
@@ -20,7 +22,11 @@ def render(specs: list[ModelSpec]) -> None:
     st.caption("One tweet, three models, side by side — sentiment, emotion, topic, and NER.")
 
     tweet = st.text_area(
-        "Tweet text", height=90, key="compare_tweet", placeholder="Type any World Cup tweet..."
+        "Tweet text",
+        height=90,
+        max_chars=MAX_TWEET_CHARS,
+        key="compare_tweet",
+        placeholder="Type any World Cup tweet...",
     )
     analyze = st.button(
         "Analyze with all 3 models", type="primary", icon=":material/play_arrow:"
@@ -29,6 +35,7 @@ def render(specs: list[ModelSpec]) -> None:
     if not tweet.strip():
         st.info("Type a tweet above, then click Analyze with all 3 models.")
     elif analyze:
+        warn_if_not_english(tweet)
         _render_comparison(tweet, specs)
 
     st.divider()
@@ -39,12 +46,18 @@ def _render_comparison(tweet: str, specs: list[ModelSpec]) -> None:
     results = []
     for spec in specs:
         with st.spinner(f"Running {spec.label}..."):
-            results.append((spec, spec.predict(tweet, spec.load())))
+            bundle = safe_load(spec.label, spec.model_dir, spec.load)
+            result = (
+                safe_predict(spec.label, spec.predict, tweet, bundle)
+                if bundle is not None
+                else PREDICT_FAILED
+            )
+        results.append((spec, result))
 
-    unusable = [spec.label for spec, result in results if result is None]
-    if unusable:
+    empty_after_cleaning = [spec.label for spec, result in results if result is None]
+    if empty_after_cleaning:
         st.warning(
-            f"{', '.join(unusable)} had nothing left to analyze after cleaning "
+            f"{', '.join(empty_after_cleaning)} had nothing left to analyze after cleaning "
             "(e.g. a link-only tweet)."
         )
 
@@ -52,11 +65,15 @@ def _render_comparison(tweet: str, specs: list[ModelSpec]) -> None:
         with col, st.container(border=True):
             _render_model_column(spec, result)
 
-    _render_agreement({spec.label: result for spec, result in results if result is not None})
+    usable = {spec.label: result for spec, result in results if isinstance(result, dict)}
+    _render_agreement(usable)
 
 
 def _render_model_column(spec: ModelSpec, result: dict | None) -> None:
     st.subheader(spec.label)
+    if result is PREDICT_FAILED:
+        st.write("Failed — see error above.")
+        return
     if result is None:
         st.write("—")
         return

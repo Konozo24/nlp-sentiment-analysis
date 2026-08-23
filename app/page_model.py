@@ -8,17 +8,23 @@ fifth tab.
 import pandas as pd
 import streamlit as st
 
+from app.confusion import render_confusion_section
+from app.language import warn_if_not_english
 from app.ner import format_entities, format_legend, has_entities
 from app.registry import ModelSpec
 from app.ui import (
+    PREDICT_FAILED,
     SAMPLE_TWEETS,
     TASKS,
     render_dataset_tab,
     render_performance_tab,
     render_task_metrics,
+    safe_load,
+    safe_predict,
 )
 
 WRITE_MY_OWN = "(write my own)"
+MAX_TWEET_CHARS = 500
 
 
 def render(spec: ModelSpec) -> None:
@@ -38,6 +44,8 @@ def render(spec: ModelSpec) -> None:
     if performance.open:
         with performance:
             render_performance_tab(spec.model_dir)
+            st.divider()
+            render_confusion_section(spec.model_dir, key_prefix=spec.key)
     if dataset.open:
         with dataset:
             render_dataset_tab(spec.data_path, spec.label)
@@ -63,6 +71,7 @@ def _render_live_demo(spec: ModelSpec) -> None:
     tweet = st.text_area(
         "Tweet text",
         height=90,
+        max_chars=MAX_TWEET_CHARS,
         placeholder="Type a World Cup tweet...",
         key=tweet_key,
     )
@@ -76,10 +85,16 @@ def _render_live_demo(spec: ModelSpec) -> None:
     if not analyze:
         return
 
-    bundle = spec.load()
-    with st.spinner(f"Running {spec.label}..."):
-        result = spec.predict(tweet, bundle)
+    warn_if_not_english(tweet)
 
+    bundle = safe_load(spec.label, spec.model_dir, spec.load)
+    if bundle is None:
+        return
+    with st.spinner(f"Running {spec.label}..."):
+        result = safe_predict(spec.label, spec.predict, tweet, bundle)
+
+    if result is PREDICT_FAILED:
+        return
     if result is None:
         st.warning("Nothing left to analyze after cleaning (e.g. a link-only tweet).")
         return

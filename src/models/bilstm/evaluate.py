@@ -25,6 +25,7 @@ from src.models.metrics import (
     entity_presence_report,
     findable_entity_types,
     save_metrics,
+    save_predictions,
     single_label_report,
     types_from_bio,
 )
@@ -78,10 +79,14 @@ def main():
         f"Out-of-vocabulary rate on the test split: {unk_rate(test_df, vocab):.2%}",
     ]
     headlines = {}
+    gold_labels: dict[str, list[str]] = {}
+    pred_labels: dict[str, list[str]] = {}
 
     for task in TASKS:
         report, headline = single_label_report(true[task], pred[task], labels[task])
         headlines[task] = headline
+        gold_labels[task] = [labels[task][i] for i in true[task]]
+        pred_labels[task] = [labels[task][i] for i in pred[task]]
         lines.extend([
             f"\n===== {task.upper()} =====",
             f"Accuracy: {headline['accuracy']:.4f}  "
@@ -124,7 +129,8 @@ def main():
     MODEL_DIR.mkdir(parents=True, exist_ok=True)
     (MODEL_DIR / "metrics.txt").write_text(report, encoding="utf-8")
     save_metrics("bilstm", len(test_df), headlines, MODEL_DIR)
-    print(f"\nSaved to {MODEL_DIR / 'metrics.txt'} and metrics.json")
+    save_predictions(MODEL_DIR, list(test_df["id"]), gold_labels, pred_labels)
+    print(f"\nSaved to {MODEL_DIR / 'metrics.txt'}, metrics.json, and predictions.csv")
 
 
 if __name__ == "__main__":
