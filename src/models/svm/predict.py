@@ -1,5 +1,9 @@
 """Predict SVM labels for a tweet.
 
+The classification tasks run on text put through clean_for_svm() -- the same
+pipeline that produced the training corpus, so emoji reach TF-IDF as the
+tokens it was fitted on ('🔥' -> 'fire'). NER stays on the raw text.
+
 Run: ``python -m src.models.svm.predict`` or pass a tweet as arguments.
 """
 
@@ -7,6 +11,8 @@ import sys
 
 import joblib
 import numpy as np
+
+from src.data_cleaning.preprocess_svm import clean_for_svm
 
 from .config import ARTIFACTS, LEGACY_MODEL_DIR, MODEL_DIR, TASKS
 from .model import GPU_AVAILABLE
@@ -40,12 +46,13 @@ def confidence_from_scores(scores):
 def predict(text, models=None, vectorizer=None, encoders=None, binarizer=None):
     if models is None:
         models, vectorizer, encoders, binarizer = load_model()
-    texts = [text]
+    cleaned = clean_for_svm(text)  # same cleaning the training corpus went through
+    texts = [cleaned]
     if GPU_AVAILABLE:
         import cudf
         texts = cudf.Series(texts)
     features = vectorizer.transform(texts)
-    result = {}
+    result = {"cleaned": cleaned}
     for task in TASKS:
         predicted = models[task].predict(features)[0]
         result[task] = encoders[task].inverse_transform([predicted])[0]
@@ -54,7 +61,7 @@ def predict(text, models=None, vectorizer=None, encoders=None, binarizer=None):
     scores = np.asarray(models["ner"].decision_function(features)).reshape(-1).astype(float)
     probabilities = 1 / (1 + np.exp(-scores))
     result["ner_confidence"] = probabilities[selected].max() if selected.any() else (1 - probabilities).max()
-    result["ner_bio"] = format_bio_entities(text)
+    result["ner_bio"] = format_bio_entities(text)  # raw text: spaCy NER needs casing/punctuation
     return result
 
 
