@@ -1,0 +1,78 @@
+========== MODEL EVALUATION (RoBERTa-CNN) ==========
+Test rows: 4130
+
+===== SENTIMENT =====
+Accuracy: 0.7455  macro P 0.7207  R 0.7628  F1 0.7343
+              precision    recall  f1-score   support
+
+    negative     0.5944    0.8000    0.6820       740
+     neutral     0.8443    0.7067    0.7694      2172
+    positive     0.7234    0.7816    0.7514      1218
+
+    accuracy                         0.7455      4130
+   macro avg     0.7207    0.7628    0.7343      4130
+weighted avg     0.7639    0.7455    0.7484      4130
+
+
+===== EMOTION =====
+Accuracy: 0.6804  macro P 0.4853  R 0.5938  F1 0.5208
+              precision    recall  f1-score   support
+
+       anger     0.5116    0.6899    0.5875       416
+     disgust     0.2591    0.6115    0.3640       139
+        fear     0.3000    0.4286    0.3529        28
+         joy     0.7351    0.7589    0.7468      1203
+     neutral     0.8579    0.6605    0.7464      2094
+     sadness     0.4785    0.6312    0.5443       141
+    surprise     0.2547    0.3761    0.3037       109
+
+    accuracy                         0.6804      4130
+   macro avg     0.4853    0.5938    0.5208      4130
+weighted avg     0.7345    0.6804    0.6964      4130
+
+
+===== TOPIC =====
+Accuracy: 0.7215  macro P 0.6929  R 0.7515  F1 0.7088
+                   precision    recall  f1-score   support
+
+      controversy     0.8536    0.8485    0.8510       680
+  event & hosting     0.4701    0.7302    0.5719       215
+fans & atmosphere     0.5495    0.8149    0.6564       443
+            match     0.8472    0.5814    0.6896      1345
+            other     0.7056    0.7410    0.7228       857
+    player & team     0.7312    0.7932    0.7610       590
+
+         accuracy                         0.7215      4130
+        macro avg     0.6929    0.7515    0.7088      4130
+     weighted avg     0.7507    0.7215    0.7236      4130
+
+
+===== NER =====
+Entity-type presence (comparable across models)
+  Micro F1: 0.9531
+  Macro F1: 0.9087
+  Exact-match accuracy (all four types right): 0.8424
+  PER   precision 0.9521  recall 0.7794  F1 0.8571
+  ORG   precision 0.9610  recall 0.9480  F1 0.9545
+  LOC   precision 0.8692  recall 0.7921  F1 0.8288
+  EVENT precision 0.9973  recall 0.9917  F1 0.9945
+
+--- token-level BIO detail (this model only) ---
+Token accuracy incl. 'O': 0.9803
+              precision    recall  f1-score   support
+
+     B-EVENT     0.9617    0.9731    0.9674      6291
+       B-LOC     0.8455    0.8350    0.8402       806
+       B-ORG     0.9054    0.9605    0.9321      3974
+       B-PER     0.9051    0.8034    0.8512      1104
+     I-EVENT     0.9462    0.9945    0.9697      3448
+       I-LOC     0.6383    0.8571    0.7317        35
+       I-ORG     0.9466    0.9301    0.9383       286
+       I-PER     0.8348    0.9586    0.8925       290
+           O     0.9933    0.9868    0.9900     63295
+
+    accuracy                         0.9803     79529
+   macro avg     0.8863    0.9221    0.9015     79529
+weighted avg     0.9807    0.9803    0.9804     79529
+
+Entity tags only (excluding O): precision 0.8729, recall 0.9140, F1 0.8904

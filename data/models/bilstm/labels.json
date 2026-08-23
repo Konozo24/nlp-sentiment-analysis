@@ -1,0 +1,35 @@
+{
+  "sentiment": [
+    "negative",
+    "neutral",
+    "positive"
+  ],
+  "emotion": [
+    "anger",
+    "disgust",
+    "fear",
+    "joy",
+    "neutral",
+    "sadness",
+    "surprise"
+  ],
+  "topic": [
+    "controversy",
+    "event & hosting",
+    "fans & atmosphere",
+    "match",
+    "other",
+    "player & team"
+  ],
+  "ner": [
+    "B-EVENT",
+    "B-LOC",
+    "B-ORG",
+    "B-PER",
+    "I-EVENT",
+    "I-LOC",
+    "I-ORG",
+    "I-PER",
+    "O"
+  ]
+}

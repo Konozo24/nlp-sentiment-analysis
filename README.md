@@ -33,6 +33,23 @@ Output is saved to `data/raw/worldcup2018_tweets.csv`. Re-running is safe — it
 
 ---
 
+## Running the app without retraining
+
+Trained checkpoints, metrics, and predictions are committed under `data/models/` so
+cloning the repo is enough to run `streamlit run app/streamlit_app.py` — no training
+required. One extra step first, because RoBERTa-CNN's checkpoint (~500MB) is too big
+for a single git blob and is committed as split parts instead:
+
+```bash
+python -m scripts.checkpoint_parts restore
+```
+
+This rebuilds `data/models/robertacnn/best_model.pt` from
+`data/models/robertacnn/best_model.pt.parts/` and verifies it byte-for-byte against a
+checksum. Safe to re-run — it skips any checkpoint that's already present.
+
+---
+
 ## Modelling pipeline and fair evaluation
 
 Three models are compared on four tasks (sentiment, emotion, topic, ner). For the

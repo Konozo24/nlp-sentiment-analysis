@@ -1,0 +1,58 @@
+========== MODEL EVALUATION (SVM) ==========
+Test rows: 4130
+
+===== SENTIMENT =====
+Accuracy: 0.7140  macro P 0.6884  R 0.6895  F1 0.6889
+              precision    recall  f1-score   support
+
+    negative     0.6114    0.6230    0.6171       740
+     neutral     0.7621    0.7624    0.7623      2172
+    positive     0.6916    0.6831    0.6873      1218
+
+    accuracy                         0.7140      4130
+   macro avg     0.6884    0.6895    0.6889      4130
+weighted avg     0.7143    0.7140    0.7142      4130
+
+
+===== EMOTION =====
+Accuracy: 0.6666  macro P 0.4675  R 0.4724  F1 0.4662
+              precision    recall  f1-score   support
+
+       anger     0.5092    0.5962    0.5493       416
+     disgust     0.3077    0.3453    0.3254       139
+        fear     0.3529    0.2143    0.2667        28
+         joy     0.6955    0.6758    0.6855      1203
+     neutral     0.7683    0.7364    0.7520      2094
+     sadness     0.4359    0.4823    0.4579       141
+    surprise     0.2029    0.2569    0.2267       109
+
+    accuracy                         0.6666      4130
+   macro avg     0.4675    0.4724    0.4662      4130
+weighted avg     0.6764    0.6666    0.6707      4130
+
+
+===== TOPIC =====
+Accuracy: 0.7339  macro P 0.7136  R 0.7070  F1 0.7097
+                   precision    recall  f1-score   support
+
+      controversy     0.8439    0.8029    0.8229       680
+  event & hosting     0.5662    0.5767    0.5714       215
+fans & atmosphere     0.6961    0.6411    0.6675       443
+            match     0.7543    0.7509    0.7526      1345
+            other     0.6809    0.7468    0.7123       857
+    player & team     0.7400    0.7237    0.7318       590
+
+         accuracy                         0.7339      4130
+        macro avg     0.7136    0.7070    0.7097      4130
+     weighted avg     0.7357    0.7339    0.7343      4130
+
+
+===== NER =====
+Entity-type presence (comparable across models)
+  Micro F1: 0.9553
+  Macro F1: 0.9236
+  Exact-match accuracy (all four types right): 0.8462
+  PER   precision 0.9314  recall 0.8567  F1 0.8925
+  ORG   precision 0.9608  recall 0.9222  F1 0.9411
+  LOC   precision 0.8315  recall 0.9061  F1 0.8672
+  EVENT precision 0.9893  recall 0.9976  F1 0.9934

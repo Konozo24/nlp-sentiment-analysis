@@ -6,8 +6,12 @@ venv/
 data/raw/*.csv
 data/accounts.db
 
-# ignore trained/downloaded model artifacts (TRABSA checkpoint, SVM pkl files, etc.)
-data/models/
+# trained model artifacts ARE tracked so teammates don't have to retrain —
+# except RoBERTa-CNN's checkpoint, which at ~500MB exceeds GitHub's 100MB
+# per-file limit. It's split into <100MB parts by scripts/checkpoint_parts.py
+# (see data/models/robertacnn/best_model.pt.parts/, which IS tracked); run
+# `python -m scripts.checkpoint_parts restore` after cloning to rebuild it.
+data/models/robertacnn/best_model.pt
 
 # ignore regenerable outputs (rebuild via base_cleaning);
 # merged_tweets.csv is NOT ignored — it holds hand-verified sentiment labels
