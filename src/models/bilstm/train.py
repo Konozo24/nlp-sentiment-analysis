@@ -1,11 +1,8 @@
 """Train the BiLSTM.
 
-Simpler than the transformer members' training loops, and for a reason worth
-stating in the report: there are no pretrained weights to protect. The
-embedding table is frozen, so every trainable parameter is randomly
-initialised. That means one ordinary learning rate for the whole model and no
-warmup schedule — the discriminative learning rates and linear warmup the
-transformer models need exist purely to avoid washing pretrained weights away.
+Simpler than the transformer members' training loops: with the embedding
+table frozen (see model.py), every trainable parameter starts randomly
+initialised, so training needs only one flat learning rate and no warmup.
 
 What is kept: class weights (neutral outnumbers negative roughly 3:1, so an
 unweighted loss would learn to answer 'neutral'), gradient clipping, and early

@@ -12,7 +12,7 @@ EMBEDDING_DIR = PROJECT_ROOT / "data" / "embeddings"
 
 MODEL_DIR = PROJECT_ROOT / "data" / "models" / "bilstm"
 
-# 400d word vectors built by scripts/build_embeddings.py 
+# 400d word vectors built by scripts/build_embeddings.py
 EMBEDDING_PATH = EMBEDDING_DIR / "embeddings.npy"
 VOCAB_PATH = EMBEDDING_DIR / "vocab.json"
 INDOMAIN_MODEL_PATH = EMBEDDING_DIR / "indomain_ft.model"
@@ -20,15 +20,12 @@ INDOMAIN_MODEL_PATH = EMBEDDING_DIR / "indomain_ft.model"
 SEED = 42  # fixed so train/evaluate rebuild the same split
 MAX_LEN = 64  # tweets longer than 64 words get cut off
 
-# frozen — 19k training rows can't fine-tune a 33k x 400 lookup table without
-# memorising it; the projection below reshapes the space instead
-FREEZE_EMBEDDINGS = True
+FREEZE_EMBEDDINGS = True  # why: see model.py's module docstring
 PROJ_DIM = 256  # embeddings are projected down to this before the LSTM
 HIDDEN_SIZE = 256  # per LSTM direction
 DROPOUT = 0.3
 
-# no pretrained weights to preserve, so a flat LR with no warmup — unlike the
-# transformer models, which need both to avoid washing away pretrained weights
+# flat LR, no warmup schedule — why: see train.py's module docstring
 BATCH_SIZE = 32
 LR = 1e-3
 WEIGHT_DECAY = 1e-5
