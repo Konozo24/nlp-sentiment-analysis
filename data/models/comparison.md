@@ -30,8 +30,8 @@ All three models scored on the same 4,130 test tweets (shared row set and group-
 
 | Model | Micro F1 | Macro F1 | Exact match |
 |---|---|---|---|
-| SVM (TF-IDF) | 0.9553 | 0.9236 | 0.8462 |
+| SVM (TF-IDF) | 0.9624 | 0.9330 | 0.8702 |
 | BiLSTM | 0.9677 | 0.9379 | 0.8896 |
 | RoBERTa-CNN | 0.9531 | 0.9087 | 0.8424 |
 
-_Entity-type presence is the only NER framing the three models share. The BiLSTM's and RoBERTa-CNN's token-level BIO scores are in their own metrics.txt and are not comparable with the SVM's._
+_Entity-type presence is the only NER framing the three models share. Each model's own token-level BIO score is in its own metrics.txt — they use different features and architectures, so those aren't directly comparable with each other._

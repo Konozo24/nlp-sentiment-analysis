@@ -1,12 +1,12 @@
 """SVM backend selection and model construction."""
 
 import numpy as np
+
 from .config import TASKS
 
 try:
     import cupy as cp
     from cuml.feature_extraction.text import TfidfVectorizer
-    from cuml.multiclass import OneVsRestClassifier
     from cuml.svm import LinearSVC
     GPU_AVAILABLE = cp.cuda.runtime.getDeviceCount() > 0
 except Exception:
@@ -14,7 +14,6 @@ except Exception:
 
 if not GPU_AVAILABLE:
     from sklearn.feature_extraction.text import TfidfVectorizer
-    from sklearn.multiclass import OneVsRestClassifier
     from sklearn.svm import LinearSVC
 
 DEVICE = "cuda" if GPU_AVAILABLE else "cpu"
@@ -46,16 +45,12 @@ def class_weights(target) -> dict[int, float]:
     }
 
 
-def train_models(features, single_targets, ner_targets):
-    """Fit one multiclass SVM per task, plus a one-vs-rest SVM for NER types.
+def train_models(features, single_targets):
+    """Fit one multiclass SVM per task.
 
-    The three task models are class-weighted with class_weights(). cuML's
-    LinearSVC takes no class_weight argument, so on GPU the same weights are
-    applied per row through sample_weight instead; both routes optimise the
-    same objective.
-
-    The NER model treats each entity type as its own binary problem, so each
-    one is balanced independently rather than by a single task's labels.
+    Class-weighted with class_weights(). cuML's LinearSVC takes no
+    class_weight argument, so on GPU the same weights are applied per row
+    through sample_weight instead; both routes optimise the same objective.
     """
     models = {}
     for task in TASKS:
@@ -68,8 +63,44 @@ def train_models(features, single_targets, ner_targets):
             )
         else:
             models[task] = LinearSVC(class_weight=weights).fit(features, target)
-
-    ovr_kwargs = {} if GPU_AVAILABLE else {"class_weight": "balanced"}
-    target = cp.asarray(ner_targets) if GPU_AVAILABLE else ner_targets
-    models["ner"] = OneVsRestClassifier(LinearSVC(**ovr_kwargs)).fit(features, target)
     return models
+
+
+def ner_features_to_matrix(ner_vectorizer, token_dicts: list[dict]):
+    """DictVectorizer -> sparse matrix, downcast to int32 indices.
+
+    DictVectorizer can emit int64-indexed sparse matrices depending on the
+    scipy build; sklearn's LinearSVC sparse fit/predict path requires 32-bit
+    indices and raises otherwise. Every caller feeding the NER tagger (train
+    and predict) goes through this, not just fit time.
+    """
+    matrix = ner_vectorizer.transform(token_dicts).tocsr()
+    matrix.indices = matrix.indices.astype(np.int32)
+    matrix.indptr = matrix.indptr.astype(np.int32)
+    return matrix
+
+
+def train_ner_tagger(X_dicts: list[dict], y_tags: list[str], tag_labels: list[str]):
+    """Train a per-token BIO tagger: DictVectorizer + a class-weighted LinearSVC.
+
+    Always CPU (sklearn), regardless of GPU_AVAILABLE - cuML has no
+    DictVectorizer equivalent, and per-token feature matrices are small
+    enough that this isn't a bottleneck either way.
+
+    tag_labels fixes the tag -> integer mapping so predict-time decoding
+    matches training exactly, independent of which tags happen to appear in
+    this particular split.
+    """
+    from sklearn.feature_extraction import DictVectorizer
+    from sklearn.svm import LinearSVC as CPULinearSVC
+
+    tag_to_id = {tag: i for i, tag in enumerate(tag_labels)}
+    target = np.array([tag_to_id[tag] for tag in y_tags])
+
+    vectorizer = DictVectorizer(sparse=True)
+    vectorizer.fit(X_dicts)
+    features = ner_features_to_matrix(vectorizer, X_dicts)
+
+    weights = class_weights(target)
+    tagger = CPULinearSVC(class_weight=weights).fit(features, target)
+    return vectorizer, tagger

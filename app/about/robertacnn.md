@@ -17,7 +17,7 @@ sentiment / emotion / topic          NER head --> CRF (tag per word)
 This is a **transformer-era** model: `cardiffnlp/twitter-roberta-base`, a
 RoBERTa encoder pretrained on Twitter text, fine-tuned end-to-end on this
 project's data. Every word's representation depends on the whole tweet
-around it — self-attention lets each token look at every other token in the
+around it - self-attention lets each token look at every other token in the
 sequence, so the same word gets a different vector depending on what it's
 next to. Because the encoder is fine-tuned rather than frozen, its notion of
 "context" is adapted to this exact task and this exact dataset, not just to
@@ -42,7 +42,7 @@ relying on a single summary token to capture everything the sentence needs.
 ### The cost of fine-tuning on ~19k tweets
 
 Full fine-tuning of a 110M-parameter encoder on a training set this size
-overfits quickly — this model's own training run converges within the first
+overfits quickly - this model's own training run converges within the first
 few epochs and gains little from training longer. That's a real, expected
 trade-off of this approach: more representational power per parameter, but
 also more parameters than a training set this size can fully constrain.

@@ -106,9 +106,10 @@ def main():
         table(rows, ["Model"] + [name for _, name in ner_columns]),
         "",
         (
-            "_Entity-type presence is the only NER framing the three models share. The BiLSTM's "
-            "and RoBERTa-CNN's token-level BIO scores are in their own metrics.txt and are not "
-            "comparable with the SVM's._"
+            "_Entity-type presence is the only NER framing the three models share. Each "
+            "model's own token-level BIO score is in its own metrics.txt - they use "
+            "different features and architectures, so those aren't directly comparable "
+            "with each other._"
         ),
         "",
     ]

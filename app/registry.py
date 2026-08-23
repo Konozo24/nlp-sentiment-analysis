@@ -1,20 +1,17 @@
 """One ModelSpec per model - the single place a new model page is added.
 
-Kept import-light on purpose: nothing heavy (torch, transformers, spacy) is
+Kept import-light on purpose: nothing heavy (torch, transformers) is
 imported at module scope. Every loader and predictor does its heavy imports
 inside its own body, so opening the SVM page never pulls in torch, and
 @st.cache_resource means the app pays each load cost only once.
 """
 
-import functools
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 import streamlit as st
-
-from app.ner import parse_inline_bio
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 ABOUT_DIR = Path(__file__).parent / "about"
@@ -53,26 +50,15 @@ def _paths(key: str) -> dict[str, Path]:
 def _load_svm():
     from src.models.svm.predict import load_model
 
-    _cache_spacy_load()
     return load_model()
-
-
-def _cache_spacy_load() -> None:
-    """Memoize spacy.load, which format_bio_entities() otherwise calls afresh
-    on every prediction - a multi-second disk read each time. Changes no model
-    output, only avoids re-reading the same weights."""
-    import spacy
-
-    if not hasattr(spacy.load, "cache_info"):
-        spacy.load = functools.lru_cache(maxsize=4)(spacy.load)
 
 
 def _predict_svm(tweet: str, bundle) -> dict | None:
     from src.models.svm.config import TASKS
     from src.models.svm.predict import predict as svm_predict
 
-    models, vectorizer, encoders, binarizer = bundle
-    result = svm_predict(tweet, models, vectorizer, encoders, binarizer)
+    models, vectorizer, encoders, ner_vectorizer = bundle
+    result = svm_predict(tweet, models, vectorizer, encoders, ner_vectorizer)
 
     words = result["cleaned"].split()
     if not words:
@@ -86,7 +72,7 @@ def _predict_svm(tweet: str, bundle) -> dict | None:
         }
         for task in TASKS
     }
-    return {"words": words, "tasks": tasks, "ner": parse_inline_bio(result["ner_bio"])}
+    return {"words": words, "tasks": tasks, "ner": result["ner"]}
 
 
 SVM_SPEC = ModelSpec(

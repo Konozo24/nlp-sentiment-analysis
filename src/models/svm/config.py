@@ -16,4 +16,4 @@ LEGACY_MODEL_DIR = Path(__file__).resolve().parent
 SEED = 42  # train/val/test assignment lives in data/processed/splits.csv
 TASKS = ["sentiment", "emotion", "topic"]
 TFIDF_KWARGS = {"lowercase": True, "stop_words": "english", "ngram_range": (1, 2), "min_df": 2, "max_df": 0.95, "sublinear_tf": True}
-ARTIFACTS = ("tfidf.pkl", "label_encoders.pkl", "ner_binarizer.pkl", "svm_models.pkl")
+ARTIFACTS = ("tfidf.pkl", "label_encoders.pkl", "ner_vectorizer.pkl", "svm_models.pkl")

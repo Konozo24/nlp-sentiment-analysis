@@ -49,10 +49,30 @@ fans & atmosphere     0.6961    0.6411    0.6675       443
 
 ===== NER =====
 Entity-type presence (comparable across models)
-  Micro F1: 0.9553
-  Macro F1: 0.9236
-  Exact-match accuracy (all four types right): 0.8462
-  PER   precision 0.9314  recall 0.8567  F1 0.8925
-  ORG   precision 0.9608  recall 0.9222  F1 0.9411
-  LOC   precision 0.8315  recall 0.9061  F1 0.8672
-  EVENT precision 0.9893  recall 0.9976  F1 0.9934
+  Micro F1: 0.9624
+  Macro F1: 0.9330
+  Exact-match accuracy (all four types right): 0.8702
+  PER   precision 0.9291  recall 0.9112  F1 0.9201
+  ORG   precision 0.9589  recall 0.9474  F1 0.9531
+  LOC   precision 0.8191  recall 0.9116  F1 0.8628
+  EVENT precision 0.9944  recall 0.9978  F1 0.9961
+
+--- token-level BIO detail (this model only) ---
+Token accuracy incl. 'O': 0.9768
+              precision    recall  f1-score   support
+
+     B-EVENT     0.9227    0.9738    0.9476      6366
+       B-LOC     0.8002    0.9509    0.8691       855
+       B-ORG     0.9146    0.9271    0.9208      4653
+       B-PER     0.8835    0.9261    0.9043      1163
+     I-EVENT     0.9491    0.9932    0.9707      3532
+       I-LOC     0.8889    0.8649    0.8767        37
+       I-ORG     0.9135    0.9496    0.9312       278
+       I-PER     0.9041    0.8949    0.8995       295
+           O     0.9948    0.9819    0.9883     61640
+
+    accuracy                         0.9768     78819
+   macro avg     0.9079    0.9403    0.9231     78819
+weighted avg     0.9778    0.9768    0.9771     78819
+
+Entity tags only (excluding O): precision 0.8971, recall 0.9351, F1 0.9150

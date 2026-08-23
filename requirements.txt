@@ -31,10 +31,6 @@ transformers==5.13.1
 # BiLSTM - fastText word embeddings (pretrained + trained in-domain)
 gensim==4.4.0
 
-# SVM - NER entity text extraction
-spacy==3.8.15
-en_core_web_trf @ https://github.com/explosion/spacy-models/releases/download/en_core_web_trf-3.8.0/en_core_web_trf-3.8.0-py3-none-any.whl
-
 # Prototype UI
 streamlit==1.61.1
 altair==6.2.2
