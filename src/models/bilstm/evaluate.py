@@ -89,9 +89,11 @@ def main():
         pred_labels[task] = [labels[task][i] for i in pred[task]]
         lines.extend([
             f"\n===== {task.upper()} =====",
-            f"Accuracy: {headline['accuracy']:.4f}  "
-            f"macro P {headline['macro_precision']:.4f}  "
-            f"R {headline['macro_recall']:.4f}  F1 {headline['macro_f1']:.4f}",
+            (
+                f"Accuracy: {headline['accuracy']:.4f}  "
+                f"macro P {headline['macro_precision']:.4f}  "
+                f"R {headline['macro_recall']:.4f}  F1 {headline['macro_f1']:.4f}"
+            ),
             report,
         ])
 
@@ -106,7 +108,7 @@ def main():
     ]
     presence_report, headline = entity_presence_report(true_types, predicted_types)
     headlines["ner"] = headline
-    lines.extend([f"\n===== NER =====", presence_report])
+    lines.extend(["\n===== NER =====", presence_report])
 
     # token accuracy here counts the dominant 'O' class, so the entity-only
     # line below it is the meaningful figure

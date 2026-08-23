@@ -1,38 +1,23 @@
-"""Build the static word-embedding matrix the BiLSTM reads.
+"""Give the BiLSTM a vector for every token — including 2026 World Cup slang
+that no published embedding has ever seen, because it postdates all of them.
 
-Why two sources instead of one
-------------------------------
-No embedding released before 2026 can know 2026 slang, so we attack the
-problem from both ends and concatenate the results per token:
+No single embedding source covers that, so this concatenates two fastText
+sources per token instead of using one:
 
-  cols   0-299  pretrained fastText (cc.en.300, Common Crawl)
-                General English semantics, and — because fastText composes a
-                vector from character n-grams — a usable vector even for words
-                it never saw. 'goooaaal' resolves through 'goo','ooa','aal'
-                instead of collapsing to <unk>, which is what GloVe/Word2Vec
-                would do to most of Twitter.
-
+  cols   0-299  pretrained fastText (cc.en.300, Common Crawl) — general
+                English semantics, and, since fastText composes a vector from
+                character n-grams, a usable vector even for words it never
+                saw ('goooaaal' -> 'goo'+'ooa'+'aal' rather than <unk>, which
+                is what GloVe/Word2Vec would do to most of Twitter).
   cols 300-399  in-domain fastText, trained here on our own World Cup tweets
-                The corpus holds ~10k tweets from 2026. Whatever current slang
-                means, it means it *here* — no external corpus can supply that,
-                because the usage postdates every published embedding.
+                (~10k from 2026) — whatever current slang means, it means it
+                *here*; no external corpus can supply that.
 
-Each half is L2-normalised before joining so neither dominates the input scale
-of the BiLSTM.
+Four cacheable steps get there — vocab, indomain, pretrained, assemble — each
+explained in its own function below; `--only` runs one instead of the whole
+chain. `pretrained` alone needs ~8GB RAM to hold cc.en.300.bin, which is why
+it's a separate step: that cost is paid once, not on every run.
 
-Steps (each caches its output; re-running is cheap)
---------------------------------------------------
-  vocab       token -> row index, from the cleaned corpus
-  indomain    train gensim FastText on our tweets      -> indomain.npy + .model
-  pretrained  pull vectors for our vocab out of cc.en.300.bin -> pretrained.npy
-  assemble    normalise, concatenate, write embeddings.npy
-
-The 'pretrained' step needs ~8GB of free RAM to hold cc.en.300.bin. It is a
-separate step precisely so that cost is paid once, in its own process, and
-never again — the cached pretrained.npy is only ~40MB.
-
-Usage
------
   python scripts/build_embeddings.py                      # all four steps
   python scripts/build_embeddings.py --only pretrained    # just the heavy step
 """

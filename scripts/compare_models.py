@@ -1,7 +1,7 @@
 """Build one comparison table from the three models' metrics.json files.
 
-Prints a table per task — sentiment, emotion, topic, and NER entity-type
-presence — and writes them to data/models/comparison.md.
+Prints a table per task for sentiment, emotion, topic, and NER entity-type
+presence and writes them to data/models/comparison.md.
 
 Exits with a message if any model has not been evaluated yet, or if the models
 disagree on the test-set size or the label sets, since a table built from those
@@ -80,8 +80,10 @@ def main():
     parts = [
         "# Model comparison",
         "",
-        f"All three models scored on the same {n_test:,} test tweets "
-        "(shared row set and group-aware split; see src/data_cleaning/base_cleaning.py).",
+        (
+            f"All three models scored on the same {n_test:,} test tweets "
+            "(shared row set and group-aware split; see src/data_cleaning/base_cleaning.py)."
+        ),
         "",
     ]
 
@@ -103,9 +105,11 @@ def main():
         "",
         table(rows, ["Model"] + [name for _, name in ner_columns]),
         "",
-        "_Entity-type presence is the only NER framing the three models share. The BiLSTM's "
-        "and RoBERTa-CNN's token-level BIO scores are in their own metrics.txt and are not "
-        "comparable with the SVM's._",
+        (
+            "_Entity-type presence is the only NER framing the three models share. The BiLSTM's "
+            "and RoBERTa-CNN's token-level BIO scores are in their own metrics.txt and are not "
+            "comparable with the SVM's._"
+        ),
         "",
     ]
 

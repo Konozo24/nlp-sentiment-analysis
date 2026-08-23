@@ -1,23 +1,5 @@
 """Try the trained BiLSTM on any tweet you type.
 
-Handling words the model has never seen
----------------------------------------
-A plain embedding table answers '<unk>' for anything outside its vocabulary,
-and on Twitter that is a lot of tokens: new slang, misspellings, fused
-hashtags, elongations. This model does better. When a word is missing, its
-vector is COMPOSED on the fly from the word's character n-grams by the
-in-domain fastText model — the same mechanism that let the table be built in
-the first place.
-
-So 'that finish was absolutely bonkersss' still produces a real vector for
-'bonkersss', reached through 'bonk', 'onke', 'kers' and so on, and the model
-reads it as a relative of 'bonkers' rather than as a blank.
-
-The pretrained half of the vector cannot be composed at run time without
-holding a 7GB file in memory, so it falls back to the <unk> centroid. The
-in-domain half — the half that actually carries current World Cup slang — is
-fully live.
-
 Run:  python -m src.models.bilstm.predict                       (interactive)
       python -m src.models.bilstm.predict "Messi is on fire!"   (one-off)
 """
@@ -31,7 +13,14 @@ import torch
 from src.data_cleaning.preprocess_bilstm import clean_for_bilstm
 
 from .config import INDOMAIN_MODEL_PATH, MAX_LEN, MODEL_DIR, TASKS
-from .data import UNK_ID, collate_fn, encode_words, load_embeddings, load_json, load_vocab
+from .data import (
+    UNK_ID,
+    collate_fn,
+    encode_words,
+    load_embeddings,
+    load_json,
+    load_vocab,
+)
 from .model import BiLSTM
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")

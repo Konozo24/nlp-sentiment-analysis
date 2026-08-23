@@ -2,13 +2,6 @@
 
 BiLSTM = static word embeddings (fastText, pretrained + in-domain)
 -> BiLSTM -> attention pooling -> one head per task (plus a CRF for NER).
-
-This is the deep-learning-era model in the group's three-way comparison:
-no transformer anywhere in it. Words are looked up in a fixed embedding
-table, so every vector is context-independent — 'bank' has one vector
-whether the tweet is about a river or a penalty. That limitation is the
-point: it is exactly what the transformer era removed, and having a clean
-example of it makes the comparison against RobertaCNN meaningful.
 """
 
 from pathlib import Path

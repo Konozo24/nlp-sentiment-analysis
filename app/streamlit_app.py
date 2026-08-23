@@ -20,8 +20,8 @@ if str(PROJECT_ROOT) not in sys.path:
 
 st.set_page_config(page_title="World Cup tweet analysis", page_icon="⚽", layout="wide")
 
-from app import page_compare, page_model  # noqa: E402
-from app.registry import MODEL_SPECS  # noqa: E402
+from app import page_compare, page_model
+from app.registry import MODEL_SPECS
 
 model_pages = [
     st.Page(
