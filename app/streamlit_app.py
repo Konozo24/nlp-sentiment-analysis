@@ -20,7 +20,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 st.set_page_config(page_title="World Cup tweet analysis", page_icon="⚽", layout="wide")
 
-from app import page_compare, page_model
+from app import page_compare, page_dataset, page_model
 from app.registry import MODEL_SPECS
 
 model_pages = [
@@ -33,6 +33,12 @@ model_pages = [
     )
     for index, spec in enumerate(MODEL_SPECS)
 ]
+dataset_page = st.Page(
+    partial(page_dataset.render, MODEL_SPECS),
+    title="Dataset",
+    icon=":material/table_chart:",
+    url_path="dataset",
+)
 compare_page = st.Page(
     partial(page_compare.render, MODEL_SPECS),
     title="Compare all three",
@@ -40,7 +46,7 @@ compare_page = st.Page(
     url_path="compare",
 )
 
-page = st.navigation({"Models": model_pages, "Analysis": [compare_page]})
+page = st.navigation({"Models": model_pages, "Analysis": [dataset_page, compare_page]})
 
 with st.sidebar:
     st.caption("Sentiment · emotion · topic · NER  \n(2014-2026 FIFA World Cup tweets)")

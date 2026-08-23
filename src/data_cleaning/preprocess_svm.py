@@ -16,12 +16,18 @@ from .utils import (
     normalize_whitespace,
     remove_links,
     remove_punctuation,
+    remove_unicode_punctuation,
 )
 
 STEPS = [
     remove_links,
+    # unicode-aware, before demojize: strips the curly quotes Twitter inserts,
+    # which the ASCII-only remove_punctuation below leaves behind and which
+    # otherwise split the vocabulary ('its' and 'it’s' as separate features).
+    remove_unicode_punctuation,
     demojize_to_token,
     lowercase,
+    # ASCII pass, after demojize: strips the '_' in 'soccer_ball' -> 'soccerball'
     remove_punctuation,
     normalize_whitespace,
 ]

@@ -10,6 +10,7 @@ import string
 import unicodedata
 
 import emoji
+import ftfy
 
 _URL_RE = re.compile(r"https?://\S+|www\.\S+|\bhttp\b")
 _TCO_URL_RE = re.compile(r"https?://t\.co/\S+")
@@ -19,6 +20,10 @@ _NUMBER_RE = re.compile(r"\d+")
 _WHITESPACE_RE = re.compile(r"\s+")
 _RT_PREFIX_RE = re.compile(r"^RT\s+@\w+:\s*")
 _NON_ALNUM_RE = re.compile(r"[^a-z0-9 ]")
+
+
+def fix_mojibake(text: str) -> str:
+    return ftfy.fix_encoding(text)
 
 
 def unescape_html(text: str) -> str:

@@ -1,7 +1,8 @@
 """Build cleaned_tweets.csv, the single row set all three models train on.
 
 Reads merged_tweets.csv and, in order:
-  1. decodes HTML entities, strips 'RT @user:' prefixes, normalizes whitespace
+  1. repairs mojibake, decodes HTML entities, strips 'RT @user:' prefixes,
+     normalizes whitespace
   2. drops rows that are empty once normalized, and deduplicates on
      utils.canonical_key()
   3. keeps only lang == 'en'
@@ -20,7 +21,13 @@ from pathlib import Path
 import pandas as pd
 
 from .splits import attach_split_column, summarise
-from .utils import canonical_key, normalize_whitespace, remove_rt_prefix, unescape_html
+from .utils import (
+    canonical_key,
+    fix_mojibake,
+    normalize_whitespace,
+    remove_rt_prefix,
+    unescape_html,
+)
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 PROCESSED_DIR = PROJECT_ROOT / "data" / "processed"
@@ -31,9 +38,14 @@ CLEANED_PATH = PROCESSED_DIR / "cleaned_tweets.csv"
 def structural_clean(df: pd.DataFrame) -> pd.DataFrame:
     """Normalize tweet text, then drop empty and duplicate rows.
 
-    Text changes are limited to decoding HTML entities ('&amp;' -> '&'),
+    Text changes are limited to repairing mojibake from the scrape
+    ('didnâ€™t' -> "didn’t"), decoding HTML entities ('&amp;' -> '&'),
     stripping the 'RT @user:' retweet prefix, and collapsing whitespace, so a
     retweet and its original become the same string.
+
+    Mojibake is repaired first, so canonical_key sees the real characters. It
+    does not change which rows survive: canonical_key strips non-alphanumerics
+    anyway, so the repair is verified to leave the row set byte-identical.
 
     Duplicates are judged by utils.canonical_key(), which ignores case,
     punctuation, links and mentions — a stricter test than comparing the tweet
@@ -42,7 +54,13 @@ def structural_clean(df: pd.DataFrame) -> pd.DataFrame:
     """
     df = df.copy()
     df["tweet"] = df["tweet"].fillna("").astype(str)
-    df["tweet"] = df["tweet"].map(unescape_html).map(remove_rt_prefix).map(normalize_whitespace)
+    df["tweet"] = (
+        df["tweet"]
+        .map(fix_mojibake)
+        .map(unescape_html)
+        .map(remove_rt_prefix)
+        .map(normalize_whitespace)
+    )
 
     df["canonical"] = df["tweet"].map(canonical_key)
     df = df[df["canonical"].str.len() > 0]

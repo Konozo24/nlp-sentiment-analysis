@@ -8,7 +8,6 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-import altair as alt
 import pandas as pd
 import streamlit as st
 
@@ -16,8 +15,6 @@ from app.metrics import load_headlines, parse_entity_presence, parse_report
 
 # the three sentence-level tasks, in the order every page shows them
 TASKS = ("sentiment", "emotion", "topic")
-
-SENTIMENT_COLORS = {"positive": "orange", "neutral": "blue", "negative": "red"}
 
 TASK_ORDER = (*TASKS, "ner")
 
@@ -94,10 +91,7 @@ def render_performance_tab(model_dir: Path) -> None:
 
 
 def render_dataset_tab(data_path: Path, label: str) -> None:
-    """Distribution charts and sample rows.
-
-    Works for all three *_input.csv files because they share the same columns
-    (id, tweet, date, lang, year, sentiment, emotion, topic, ner, split).
+    """This model's own view of the data: the tweet text after its cleaning stage.
     """
     df = _read_dataset(str(data_path))
     if df is None:
@@ -106,55 +100,11 @@ def render_dataset_tab(data_path: Path, label: str) -> None:
 
     st.write(f"**{len(df):,} tweets** in `{data_path.name}` (English only, cleaned and deduplicated).")
 
-    year_col, sentiment_col = st.columns(2)
-    with year_col:
-        st.write("**By year**")
-        st.bar_chart(df["year"].value_counts().sort_index())
-    with sentiment_col:
-        st.write("**Sentiment distribution**")
-        _render_pie(df["sentiment"].value_counts(), colors=SENTIMENT_COLORS)
-
-    emotion_col, topic_col = st.columns(2)
-    with emotion_col:
-        st.write("**Emotion distribution**")
-        st.bar_chart(df["emotion"].value_counts())
-    with topic_col:
-        st.write("**Topic distribution**")
-        st.bar_chart(df["topic"].value_counts())
-
     st.write(f"**Sample rows** (tweet text shown is already {label}-cleaned)")
     st.dataframe(
         df[["tweet", "sentiment", "emotion", "topic"]].sample(min(10, len(df)), random_state=1)
     )
-
-
-def _render_pie(counts: pd.Series, colors: dict[str, str] | None = None) -> None:
-    data = counts.rename("count").rename_axis("class").reset_index()
-    data["share"] = data["count"] / data["count"].sum()
-
-    color = (
-        alt.Color(
-            "class:N",
-            legend=alt.Legend(title=None),
-            scale=alt.Scale(domain=list(colors.keys()), range=list(colors.values())),
-        )
-        if colors
-        else alt.Color("class:N", legend=alt.Legend(title=None))
-    )
-    chart = (
-        alt.Chart(data)
-        .mark_arc()
-        .encode(
-            theta=alt.Theta("count:Q", stack=True),
-            color=color,
-            tooltip=[
-                alt.Tooltip("class:N", title="Class"),
-                alt.Tooltip("count:Q", title="Count"),
-                alt.Tooltip("share:Q", title="Share", format=".1%"),
-            ],
-        )
-    )
-    st.altair_chart(chart)
+    st.caption("Label distributions for the full dataset are on the **Dataset** page.")
 
 
 @st.cache_data(show_spinner=False)
@@ -165,8 +115,14 @@ def _read_metrics(model_dir: str) -> str | None:
 
 @st.cache_data(show_spinner="Reading dataset...")
 def _read_dataset(data_path: str) -> pd.DataFrame | None:
+    """Only the columns the sample-rows table shows - the rest of the file is
+    the ner and date columns, which this tab never draws."""
     path = Path(data_path)
-    return pd.read_csv(path, encoding="utf-8") if path.exists() else None
+    if not path.exists():
+        return None
+    return pd.read_csv(
+        path, encoding="utf-8", usecols=["tweet", "sentiment", "emotion", "topic"]
+    )
 
 
 def _find_line(text: str, prefix: str) -> str | None:
