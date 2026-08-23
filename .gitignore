@@ -20,6 +20,13 @@ data/processed/cleaned_tweets.csv
 # ignore Python cache
 __pycache__/
 *.pyc
-# ignore embedding artifacts (regenerable via scripts/build_embeddings.py):
-# the 7GB fastText download, the pruned matrices, and the in-domain model
-data/embeddings/
+# embedding artifacts: the four files bilstm/predict.py loads at INFERENCE
+# (vocab.json, embeddings.npy, indomain_ft.model + its .npy sidecar) ARE
+# tracked — without them a fresh clone can't run the BiLSTM at all, and an
+# untracked vocab.json is free to drift out of sync with the data the metrics
+# were computed on. Ignored below: the 7.2GB fastText download and the
+# build-time intermediates, all regenerable via scripts/build_embeddings.py.
+data/embeddings/cc.en.300.bin
+data/embeddings/corpus.json
+data/embeddings/indomain.npy
+data/embeddings/pretrained.npy
