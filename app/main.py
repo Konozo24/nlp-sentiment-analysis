@@ -21,13 +21,13 @@ st.set_page_config(page_title="World Cup Tweet Analysis", page_icon="⚽", layou
 
 from app.registry import MODEL_SPECS  # noqa: E402 — light: adapters defer heavy imports
 
-COMPARE = "⚖️ Compare all three"
+COMPARE = "Compare all three"
 
 with st.sidebar:
     st.title("⚽ World Cup Tweets")
     choice = st.selectbox(
         "Model",
-        [f"{spec.icon} {spec.label}" for spec in MODEL_SPECS] + [COMPARE],
+        [spec.label for spec in MODEL_SPECS] + [COMPARE],
     )
     st.caption("Sentiment · Emotion · Topic · NER — 2014-2026 FIFA World Cup tweets.")
 
@@ -38,4 +38,4 @@ if choice == COMPARE:
 else:
     from app.view_single import render
 
-    render(next(spec for spec in MODEL_SPECS if f"{spec.icon} {spec.label}" == choice))
+    render(next(spec for spec in MODEL_SPECS if spec.label == choice))

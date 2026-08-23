@@ -21,11 +21,11 @@ TASKS = ["sentiment", "emotion", "topic"]
 
 
 def render(spec: ModelSpec) -> None:
-    st.title(f"{spec.icon} {spec.label} — FIFA World Cup Tweet Analysis")
+    st.title(f"{spec.label} — FIFA World Cup Tweet Analysis")
     st.caption(spec.tagline)
 
     tab_demo, tab_perf, tab_data, tab_about = st.tabs(
-        ["🔮 Live Demo", "📊 Performance", "🗂️ Dataset", "ℹ️ About the model"]
+        ["Live Demo", "Performance", "Dataset", "About the model"]
     )
 
     with tab_demo:

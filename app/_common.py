@@ -17,18 +17,6 @@ ENTITY_COLORS = {
     "EVENT": "#a855f7",  # purple
 }
 
-EMOJI_MAP = {
-    "positive": "🟢",
-    "negative": "🔴",
-    "neutral": "⚪",
-    "joy": "😄",
-    "anger": "😠",
-    "sadness": "😢",
-    "fear": "😨",
-    "disgust": "🤢",
-    "surprise": "😲",
-}
-
 SAMPLE_TWEETS = [
     "Messi is on fire! What a goal to win it for Argentina 🔥🐐",
     "Absolute disgrace from the referee tonight, VAR ruined the match #WorldCup",
@@ -83,8 +71,7 @@ def render_task_metrics(cols, tasks: list[str], tasks_dict: dict) -> None:
     for col, task in zip(cols, tasks, strict=True):
         info = tasks_dict[task]
         label = info["label"]
-        icon = EMOJI_MAP.get(label, "")
-        col.metric(task.capitalize(), f"{icon} {label}", f"{info['confidence']:.0%} confidence")
+        col.metric(task.capitalize(), label, f"{info['confidence']:.0%} confidence")
 
 
 def parse_metrics(text: str) -> dict:

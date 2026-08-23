@@ -24,8 +24,6 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 class ModelSpec:
     key: str
     label: str
-    icon: str
-    author: str
     tagline: str
     data_path: Path
     model_dir: Path
@@ -83,8 +81,6 @@ def _predict_svm(tweet: str, bundle):
 SVM_SPEC = ModelSpec(
     key="svm",
     label="SVM (TF-IDF)",
-    icon="🧮",
-    author="Justin",
     tagline="TF-IDF features → LinearSVC per task — the classical-ML baseline.",
     data_path=PROJECT_ROOT / "data" / "processed" / "svm_input.csv",
     model_dir=PROJECT_ROOT / "data" / "models" / "svm",
@@ -128,12 +124,6 @@ all — it runs spaCy's `en_core_web_trf` (a transformer NER pipeline) and maps
 its entity types onto this project's PER/ORG/LOC/EVENT scheme. The first
 prediction in a session is noticeably slower while that pipeline loads from
 disk; every prediction after is fast.
-
-### Team context
-One of three models compared in the group's sentiment-analysis prototype
-(FIFA World Cup tweets, 2014–2026): **SVM** (this page, Justin),
-**BiLSTM** (fastText + BiLSTM + attention, Ming), and **RoBERTa-CNN**
-(fine-tuned transformer, Jason).
 """,
     load=_load_svm,
     predict=_predict_svm,
@@ -211,20 +201,12 @@ than discarded: `bonkersss` is reached through `bonk`, `onke`, `kers`. GloVe
 and Word2Vec cannot do this at all — an unseen token gets nothing.
 
 Try it in the Live Demo tab: invent a word and watch it still get a vector.
-
-### Team context
-One of three models compared in the group's sentiment-analysis prototype
-(FIFA World Cup tweets, 2014–2026): **SVM** (TF-IDF, Justin),
-**RoBERTa-CNN** (fine-tuned transformer, Jason), and **BiLSTM**
-(this page, Ming).
 """
 
 
 BILSTM_SPEC = ModelSpec(
     key="bilstm",
     label="BiLSTM",
-    icon="🔁",
-    author="Ming",
     tagline="fastText word embeddings → BiLSTM → Attention → 4 task heads.",
     data_path=PROJECT_ROOT / "data" / "processed" / "bilstm_input.csv",
     model_dir=PROJECT_ROOT / "data" / "models" / "bilstm",
@@ -259,8 +241,6 @@ def _predict_robertacnn(tweet: str, bundle):
 ROBERTACNN_SPEC = ModelSpec(
     key="robertacnn",
     label="RoBERTa-CNN",
-    icon="🤖",
-    author="Jason",
     tagline="cardiffnlp/twitter-roberta-base (fine-tuned) → CNN pooling → 4 task heads + CRF.",
     data_path=PROJECT_ROOT / "data" / "processed" / "robertacnn_input.csv",
     model_dir=PROJECT_ROOT / "data" / "models" / "robertacnn",
@@ -304,12 +284,6 @@ overfits quickly — this model's own training run converges in the first few
 epochs, well before the BiLSTM does, and gains little from training longer.
 That's a real, expected trade-off of the transformer era, not a bug: more
 representational power, less data to justify it than a larger corpus would.
-
-### Team context
-One of three models compared in the group's sentiment-analysis prototype
-(FIFA World Cup tweets, 2014–2026): **SVM** (TF-IDF, Justin),
-**BiLSTM** (fastText + BiLSTM + attention, Ming), and **RoBERTa-CNN**
-(this page, Jason).
 """,
     load=_load_robertacnn,
     predict=_predict_robertacnn,

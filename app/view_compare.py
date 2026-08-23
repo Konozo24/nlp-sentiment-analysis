@@ -11,7 +11,7 @@ from pathlib import Path
 
 import streamlit as st
 
-from app._common import EMOJI_MAP, render_ner_html
+from app._common import render_ner_html
 from app.registry import ModelSpec
 
 TASKS = ["sentiment", "emotion", "topic"]
@@ -19,7 +19,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 
 def render(specs: list[ModelSpec]) -> None:
-    st.title("⚖️ Compare all three models")
+    st.title("Compare all three models")
     st.caption("One tweet, three models, side by side — sentiment / emotion / topic / NER.")
 
     tweet = st.text_area(
@@ -43,14 +43,13 @@ def render(specs: list[ModelSpec]) -> None:
         cols = st.columns(3)
         for col, (spec, res) in zip(cols, results.values(), strict=True):
             with col:
-                st.subheader(f"{spec.icon} {spec.label}")
+                st.subheader(spec.label)
                 if res is None:
                     st.write("—")
                     continue
                 for task in TASKS:
                     info = res["tasks"][task]
-                    icon = EMOJI_MAP.get(info["label"], "")
-                    st.metric(task.capitalize(), f"{icon} {info['label']}", f"{info['confidence']:.0%}")
+                    st.metric(task.capitalize(), info["label"], f"{info['confidence']:.0%}")
                 st.markdown("**Entities**")
                 if any(tag != "O" for _, tag in res["ner"]):
                     st.markdown(render_ner_html(res["ner"]), unsafe_allow_html=True)
@@ -64,9 +63,9 @@ def render(specs: list[ModelSpec]) -> None:
             for task in TASKS:
                 labels_by_model = {name: res["tasks"][task]["label"] for name, res in usable.items()}
                 agree = len(set(labels_by_model.values())) == 1
-                icon = "✅" if agree else "⚠️"
+                status = "agree" if agree else "disagree"
                 detail = ", ".join(f"{name}={label}" for name, label in labels_by_model.items())
-                st.write(f"{icon} **{task.capitalize()}**: {detail}")
+                st.write(f"**{task.capitalize()}** ({status}): {detail}")
     elif not tweet.strip():
         st.info("Type a tweet above, then click Analyze with all 3 models.")
 
