@@ -1,6 +1,6 @@
 """One model's page: live demo, performance, dataset, and model notes.
 
-Parameterized by ModelSpec — the three model pages are structurally
+Parameterized by ModelSpec - the three model pages are structurally
 identical, so there is exactly one place to fix a rendering bug or add a
 fifth tab.
 """
@@ -28,7 +28,7 @@ MAX_TWEET_CHARS = 500
 
 
 def render(spec: ModelSpec) -> None:
-    st.title(f"{spec.label} — FIFA World Cup tweet analysis")
+    st.title(f"{spec.label} - FIFA World Cup tweet analysis")
     st.caption(spec.tagline)
 
     # on_change="rerun" makes .open available, so the tabs that read files off
@@ -112,7 +112,7 @@ def _render_result(result: dict) -> None:
         st.info(
             "**Words not in the vocabulary:** "
             + ", ".join(f"`{word}`" for word in result["oov"])
-            + " — vectors composed from character n-grams (or fell back to `<unk>` "
+            + " - vectors composed from character n-grams (or fell back to `<unk>` "
             "if no in-domain model was available), so they still carry some meaning."
         )
 

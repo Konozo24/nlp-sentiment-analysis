@@ -40,17 +40,17 @@ def safe_load(label: str, model_dir: Path, load: Callable[[], Any]) -> Any | Non
 
 
 # sentinel distinguishing "predict() raised" from predict()'s own None, which
-# means "nothing left to analyze after cleaning" — the two need different messages
+# means "nothing left to analyze after cleaning" - the two need different messages
 PREDICT_FAILED = object()
 
 
 def safe_predict(label: str, predict: Callable[[str, Any], dict | None], tweet: str, bundle: Any):
     """Run a model's predict(), turning any exception into an st.error instead of a
-    crash — broad on purpose, since predict() is model-specific code this layer
+    crash - broad on purpose, since predict() is model-specific code this layer
     doesn't otherwise validate. Returns PREDICT_FAILED on error."""
     try:
         return predict(tweet, bundle)
-    except Exception as error:  # noqa: BLE001 — last line of defense before the UI
+    except Exception as error:  # noqa: BLE001 - last line of defense before the UI
         st.error(f"{label} failed to analyze this tweet ({error}).")
         return PREDICT_FAILED
 
@@ -174,8 +174,8 @@ def _find_line(text: str, prefix: str) -> str | None:
 
 
 def _render_metrics_summary(headlines: dict) -> None:
-    """Accuracy, macro precision/recall/F1, and weighted F1 — the metrics requirement (f)
-    names — one row per sentence-level task. NER isn't a single-label task, so it keeps
+    """Accuracy, macro precision/recall/F1, and weighted F1 - the metrics requirement (f)
+    names - one row per sentence-level task. NER isn't a single-label task, so it keeps
     its own micro/macro/exact-match framing in the entity-presence section below."""
     rows = {
         task.capitalize(): {
@@ -218,7 +218,7 @@ def _render_task_classes(task: str, task_metrics: dict | None) -> None:
     if entity_only:
         st.caption(
             f"Entity-only (excluding 'O'): precision {entity_only['precision']:.1%}, "
-            f"recall {entity_only['recall']:.1%}, F1 {entity_only['f1']:.1%} — the more "
+            f"recall {entity_only['recall']:.1%}, F1 {entity_only['f1']:.1%} - the more "
             "honest NER number, since most words are outside any entity."
         )
 
@@ -228,7 +228,7 @@ def _render_entity_presence(report_text: str) -> None:
     if not presence:
         return
 
-    st.subheader("NER — entity-type presence")
+    st.subheader("NER - entity-type presence")
     st.caption(
         "The one NER framing all three models share: did the tweet mention each "
         "entity type at all, regardless of exact wording."

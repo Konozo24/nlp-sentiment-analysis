@@ -1,7 +1,7 @@
 """Run one tweet through all three models side by side.
 
-The most expensive page in the app — it loads roughly 600MB of checkpoints
-plus spaCy's transformer NER pipeline — so it is never the default page.
+The most expensive page in the app - it loads roughly 600MB of checkpoints
+plus spaCy's transformer NER pipeline - so it is never the default page.
 """
 
 from pathlib import Path
@@ -19,7 +19,7 @@ MAX_TWEET_CHARS = 500
 
 def render(specs: list[ModelSpec]) -> None:
     st.title("Compare all three models")
-    st.caption("One tweet, three models, side by side — sentiment, emotion, topic, and NER.")
+    st.caption("One tweet, three models, side by side - sentiment, emotion, topic, and NER.")
 
     tweet = st.text_area(
         "Tweet text",
@@ -72,10 +72,10 @@ def _render_comparison(tweet: str, specs: list[ModelSpec]) -> None:
 def _render_model_column(spec: ModelSpec, result: dict | None) -> None:
     st.subheader(spec.label)
     if result is PREDICT_FAILED:
-        st.write("Failed — see error above.")
+        st.write("Failed - see error above.")
         return
     if result is None:
-        st.write("—")
+        st.write("-")
         return
 
     for task in TASKS:

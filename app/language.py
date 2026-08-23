@@ -3,7 +3,7 @@
 Uses the fastText language-id model already in the repo
 (data/models/lid.176.ftz) rather than adding a new dependency. Fails open: if
 the model can't be loaded, every input is treated as English so a missing
-file never blocks analysis — it only turns off one warning.
+file never blocks analysis - it only turns off one warning.
 """
 
 from pathlib import Path
@@ -13,7 +13,7 @@ import streamlit as st
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 LID_MODEL_PATH = PROJECT_ROOT / "data" / "models" / "lid.176.ftz"
 
-# below this confidence the model is guessing, not detecting — stay quiet
+# below this confidence the model is guessing, not detecting - stay quiet
 CONFIDENCE_THRESHOLD = 0.5
 
 
@@ -31,7 +31,7 @@ def warn_if_not_english(text: str) -> None:
 
     The training corpus is English-only (base_cleaning.py filters
     lang == 'en'), so a non-English tweet gets an unreliable prediction
-    rather than an error — this makes that visible instead of silent.
+    rather than an error - this makes that visible instead of silent.
     """
     model = _load_lid_model()
     if model is None:

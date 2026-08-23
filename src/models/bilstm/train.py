@@ -11,10 +11,10 @@ stopping on validation loss.
 Run:  python -m src.models.bilstm.train [--epochs N] [--resume]
 """
 
-import argparse  # noqa: I001 — import order below is deliberate (see next comment)
+import argparse  # noqa: I001 - import order below is deliberate (see next comment)
 import random
 
-import sklearn  # noqa: F401 — must import before torch (Windows heap-corruption crash otherwise)
+import sklearn  # noqa: F401 - must import before torch (Windows heap-corruption crash otherwise)
 import numpy as np
 import torch
 from torch import nn
@@ -54,7 +54,7 @@ def set_seed(seed: int = SEED) -> None:
     with 'the same seed' still diverge.
 
     cudnn.deterministic costs a little speed and buys runs that reproduce
-    exactly — the right trade for a graded experiment where the reported
+    exactly - the right trade for a graded experiment where the reported
     numbers have to be defensible.
     """
     random.seed(seed)
@@ -117,7 +117,7 @@ def train_one_epoch(
 
 @torch.no_grad()
 def evaluate_loss(model: nn.Module, loader: DataLoader, loss_fns: dict[str, nn.Module]) -> float:
-    model.eval()  # dropout off — without this, val loss is noise
+    model.eval()  # dropout off - without this, val loss is noise
     total_loss = sum(batch_loss(model, to_device(batch), loss_fns).item() for batch in loader)
     return total_loss / len(loader)
 

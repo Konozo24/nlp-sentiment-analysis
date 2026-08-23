@@ -5,7 +5,7 @@ to words (RoBERTa splits 'messi' into 'mess'+'i', but the BIO tags from
 ner_bio.py are one-per-word, so they keep the first subword of each word and
 carry a word_index/word_mask pair through every batch).
 
-Here tokenisation IS word-level — one embedding lookup per whitespace token —
+Here tokenisation IS word-level - one embedding lookup per whitespace token -
 so that alignment machinery disappears entirely. A batch is just:
 
   input_ids  : (batch, words)  one vocabulary id per word (0 = <pad>, 1 = <unk>)
@@ -13,11 +13,11 @@ so that alignment machinery disappears entirely. A batch is just:
   sentiment/emotion/topic : (batch,)        one label per tweet
   ner        : (batch, words)  one BIO tag id per word
 
-Tweets vary in length, so padding happens in collate_fn — the standard PyTorch
-place for it — rather than being baked into a hand-rolled batch generator.
+Tweets vary in length, so padding happens in collate_fn - the standard PyTorch
+place for it - rather than being baked into a hand-rolled batch generator.
 """
 
-import json  # noqa: I001 — import order below is intentional (see next line)
+import json  # noqa: I001 - import order below is intentional (see next line)
 
 # sklearn must import before torch, or Windows raises a heap-corruption crash
 import sklearn  # noqa: F401
@@ -50,7 +50,7 @@ def load_and_split() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
 
     if "split" not in df.columns:
         raise ValueError(
-            f"{DATA_PATH} has no 'split' column — re-run "
+            f"{DATA_PATH} has no 'split' column - re-run "
             "'python -m src.data_cleaning.base_cleaning' then "
             "'python -m src.data_cleaning.preprocess_bilstm'"
         )
@@ -65,7 +65,7 @@ def load_and_split() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
 def load_vocab() -> dict[str, int]:
     if not VOCAB_PATH.exists():
         raise FileNotFoundError(
-            f"{VOCAB_PATH} not found — run 'python scripts/build_embeddings.py' first."
+            f"{VOCAB_PATH} not found - run 'python scripts/build_embeddings.py' first."
         )
     return json.loads(VOCAB_PATH.read_text(encoding="utf-8"))
 
@@ -73,7 +73,7 @@ def load_vocab() -> dict[str, int]:
 def load_embeddings() -> torch.Tensor:
     if not EMBEDDING_PATH.exists():
         raise FileNotFoundError(
-            f"{EMBEDDING_PATH} not found — run 'python scripts/build_embeddings.py' first."
+            f"{EMBEDDING_PATH} not found - run 'python scripts/build_embeddings.py' first."
         )
     return torch.from_numpy(np.load(EMBEDDING_PATH))
 
@@ -117,7 +117,7 @@ class TweetDataset(Dataset):
     """Tweets as tensors, tokenised once up front rather than once per epoch.
 
     Labels are optional so the same class serves inference, where there are
-    none — predict.py builds a single-item batch through the same collate_fn,
+    none - predict.py builds a single-item batch through the same collate_fn,
     which keeps training and inference on one code path.
     """
 
@@ -197,7 +197,7 @@ def make_loader(
 
 
 def unk_rate(df: pd.DataFrame, vocab: dict[str, int]) -> float:
-    """Share of tokens with no vocabulary entry — reported in the README/paper.
+    """Share of tokens with no vocabulary entry - reported in the README/paper.
 
     Worth measuring per variant: it is the single number that justifies using
     fastText over GloVe, since fastText composes a vector for anything.

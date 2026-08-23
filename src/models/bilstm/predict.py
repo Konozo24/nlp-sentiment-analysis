@@ -7,7 +7,7 @@ Run:  python -m src.models.bilstm.predict                       (interactive)
 import sys
 
 import numpy as np
-import sklearn  # noqa: F401 — must import before torch (Windows heap-corruption crash otherwise)
+import sklearn  # noqa: F401 - must import before torch (Windows heap-corruption crash otherwise)
 import torch
 
 from src.data_cleaning.preprocess_bilstm import clean_for_bilstm
@@ -33,7 +33,7 @@ INDOMAIN_DIM = 100
 def load_indomain_model():
     """The small fastText model kept for run-time OOV composition.
 
-    Returns None if it is missing — prediction still works, unknown words just
+    Returns None if it is missing - prediction still works, unknown words just
     fall back to <unk> as they would in any ordinary embedding model.
     """
     if not INDOMAIN_MODEL_PATH.exists():

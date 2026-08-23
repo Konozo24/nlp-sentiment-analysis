@@ -12,7 +12,7 @@ One forward pass, four outputs.
 
 Why the embeddings are frozen: the table is ~26.5k x 400. The training split is
 ~19k tweets. Unfreezing lets the model memorise the training vocabulary rather
-than learn the task, and it destroys the very property we built the table for —
+than learn the task, and it destroys the very property we built the table for -
 that a slang word absent from training still lands near its neighbours. The
 trainable projection is what adapts the space instead.
 """
@@ -60,7 +60,7 @@ class BiLSTM(nn.Module):
         """Explicit initialisation instead of relying on PyTorch's defaults.
 
         The projection feeds a ReLU, so Kaiming is the matching scheme. The LSTM
-        gets orthogonal recurrent weights — the standard choice for RNNs, since
+        gets orthogonal recurrent weights - the standard choice for RNNs, since
         it keeps repeated multiplication from exploding or vanishing along the
         sequence. nn.Embedding is skipped: its weights are the fastText vectors
         and must not be touched.

@@ -96,7 +96,7 @@ def _render_heatmap(counts: pd.DataFrame, normalize: bool) -> None:
 
 
 def _render_top_confusions(counts: pd.DataFrame, top_n: int = 2) -> None:
-    """Caption the most common misclassifications — gold != pred, ranked by raw count."""
+    """Caption the most common misclassifications - gold != pred, ranked by raw count."""
     mistakes = counts.copy()
     for label in mistakes.index:
         mistakes.loc[label, label] = 0
@@ -106,5 +106,5 @@ def _render_top_confusions(counts: pd.DataFrame, top_n: int = 2) -> None:
     if ranked.empty:
         return
 
-    pairs = ", ".join(f"{row.gold} → {row.pred} ({row.count})" for row in ranked.itertuples())
-    st.caption(f"Most confused pairs (actual → predicted): {pairs}")
+    pairs = ", ".join(f"{row.gold} -> {row.pred} ({row.count})" for row in ranked.itertuples())
+    st.caption(f"Most confused pairs (actual -> predicted): {pairs}")

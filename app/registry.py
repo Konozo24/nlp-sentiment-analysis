@@ -1,4 +1,4 @@
-"""One ModelSpec per model — the single place a new model page is added.
+"""One ModelSpec per model - the single place a new model page is added.
 
 Kept import-light on purpose: nothing heavy (torch, transformers, spacy) is
 imported at module scope. Every loader and predictor does its heavy imports
@@ -59,7 +59,7 @@ def _load_svm():
 
 def _cache_spacy_load() -> None:
     """Memoize spacy.load, which format_bio_entities() otherwise calls afresh
-    on every prediction — a multi-second disk read each time. Changes no model
+    on every prediction - a multi-second disk read each time. Changes no model
     output, only avoids re-reading the same weights."""
     import spacy
 
@@ -93,7 +93,7 @@ SVM_SPEC = ModelSpec(
     key="svm",
     label="SVM (TF-IDF)",
     icon=":material/functions:",
-    tagline="TF-IDF features → LinearSVC per task — the classical-ML baseline.",
+    tagline="TF-IDF features -> LinearSVC per task - the classical-ML baseline.",
     about_md=_about("svm"),
     load=_load_svm,
     predict=_predict_svm,
@@ -108,7 +108,7 @@ SVM_SPEC = ModelSpec(
 
 @st.cache_resource(show_spinner="Loading BiLSTM model (first run only)...")
 def _load_bilstm():
-    import sklearn  # noqa: F401 — must import before torch (windows heap corruption otherwise)
+    import sklearn  # noqa: F401 - must import before torch (windows heap corruption otherwise)
 
     from src.models.bilstm.predict import load_indomain_model, load_model
 
@@ -135,7 +135,7 @@ BILSTM_SPEC = ModelSpec(
     key="bilstm",
     label="BiLSTM",
     icon=":material/linear_scale:",
-    tagline="fastText word embeddings → BiLSTM → attention → 4 task heads.",
+    tagline="fastText word embeddings -> BiLSTM -> attention -> 4 task heads.",
     about_md=_bilstm_about(),
     load=_load_bilstm,
     predict=_predict_bilstm,
@@ -148,9 +148,9 @@ BILSTM_SPEC = ModelSpec(
 # --------------------------------------------------------------------------- #
 
 
-@st.cache_resource(show_spinner="Loading RoBERTa-CNN (first run only — ~500MB checkpoint)...")
+@st.cache_resource(show_spinner="Loading RoBERTa-CNN (first run only - ~500MB checkpoint)...")
 def _load_robertacnn():
-    import sklearn  # noqa: F401 — must import before torch
+    import sklearn  # noqa: F401 - must import before torch
 
     from src.models.robertacnn.predict import load_model
 
@@ -168,7 +168,7 @@ ROBERTACNN_SPEC = ModelSpec(
     key="robertacnn",
     label="RoBERTa-CNN",
     icon=":material/hub:",
-    tagline="cardiffnlp/twitter-roberta-base (fine-tuned) → CNN pooling → 4 task heads + CRF.",
+    tagline="cardiffnlp/twitter-roberta-base (fine-tuned) -> CNN pooling -> 4 task heads + CRF.",
     about_md=_about("robertacnn"),
     load=_load_robertacnn,
     predict=_predict_robertacnn,

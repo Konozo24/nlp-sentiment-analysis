@@ -11,7 +11,7 @@ import sys
 from functools import partial
 from pathlib import Path
 
-import sklearn  # noqa: F401 — must import before torch (windows heap corruption otherwise)
+import sklearn  # noqa: F401 - must import before torch (windows heap corruption otherwise)
 import streamlit as st
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]

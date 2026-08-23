@@ -25,7 +25,7 @@ PROJ_DIM = 256  # embeddings are projected down to this before the LSTM
 HIDDEN_SIZE = 256  # per LSTM direction
 DROPOUT = 0.3
 
-# flat LR, no warmup schedule — why: see train.py's module docstring
+# flat LR, no warmup schedule - why: see train.py's module docstring
 BATCH_SIZE = 32
 LR = 1e-3
 WEIGHT_DECAY = 1e-5

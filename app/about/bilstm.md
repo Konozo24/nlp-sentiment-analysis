@@ -18,7 +18,7 @@ sentiment / emotion / topic heads
 
 This is the **deep-learning era** model in the group's three-way comparison:
 SVM + TF-IDF (classical), this BiLSTM (deep learning), RoBERTa-CNN
-(transformer). There is deliberately no transformer anywhere in it — the
+(transformer). There is deliberately no transformer anywhere in it - the
 whole point is to show what the era before transformers could and could not do.
 
 Every word here gets **one fixed vector regardless of context**. 'Fire' in
@@ -29,8 +29,8 @@ rather than a weaker copy of Jason's model.
 
 The embedding table itself combines two sources:
 
-- **Pretrained fastText** (`cc.en.300`, Common Crawl) — general English meaning.
-- **In-domain fastText**, trained here on our own ~58k World Cup tweets —
+- **Pretrained fastText** (`cc.en.300`, Common Crawl) - general English meaning.
+- **In-domain fastText**, trained here on our own ~58k World Cup tweets -
   including ~10k from 2026. Current slang means what it means *in this corpus*;
   no published embedding can contain it, because the usage postdates them all.
 
@@ -39,6 +39,6 @@ The embedding table itself combines two sources:
 Both halves are fastText, which represents a word as the sum of its character
 n-grams. A word missing from the vocabulary is therefore **composed** rather
 than discarded: `bonkersss` is reached through `bonk`, `onke`, `kers`. GloVe
-and Word2Vec cannot do this at all — an unseen token gets nothing.
+and Word2Vec cannot do this at all - an unseen token gets nothing.
 
 Try it in the Live Demo tab: invent a word and watch it still get a vector.

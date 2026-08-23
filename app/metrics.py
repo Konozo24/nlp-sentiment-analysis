@@ -1,6 +1,6 @@
 """Parsers for the metrics.txt each model's evaluate.py writes.
 
-Pure functions over text — no Streamlit — so the report format lives in one
+Pure functions over text - no Streamlit - so the report format lives in one
 place and can be tested without running the app.
 """
 
