@@ -1,75 +1,143 @@
-# NLP Sentiment Analysis — World Cup 2018 Tweets
+# NLP on FIFA World Cup Tweets (2014-2026)
 
-Collects tweets about the 2018 FIFA World Cup from Twitter/X and runs NLP sentiment analysis on them.
+English-language tweets about the 2014, 2018, 2022 and 2026 FIFA World Cups, hand-labelled
+and then analysed with three different NLP methods - one per team member - scored against
+each other on one shared test set.
 
-See [scraper.md](scraper.md) for full scraper documentation.
+Every tweet carries four gold labels, so each model is trained on four tasks at once:
+
+| Task | Type | Labels |
+|---|---|---|
+| Sentiment | sentence-level | positive / neutral / negative |
+| Emotion | sentence-level | anger, disgust, fear, joy, neutral, sadness, surprise |
+| Topic | sentence-level | controversy, event & hosting, fans & atmosphere, match, player & team, other |
+| NER | per-word BIO | PER, ORG, LOC, EVENT |
+
+The three methods, deliberately one from each era of NLP:
+
+| Model | Method |
+|---|---|
+| **SVM** | TF-IDF + LinearSVC (pre-neural), plus a second LinearSVC on per-word features for NER |
+| **BiLSTM** | frozen fastText vectors (pretrained + in-domain) -> BiLSTM -> attention pooling, CRF for NER |
+| **RoBERTa-CNN** | `cardiffnlp/twitter-roberta-base` -> multi-kernel CNN pooling, CNN+CRF for NER |
+
+Scope: **English only**. `base_cleaning.py` keeps `lang == 'en'`, and the demo app warns you
+when you paste something that isn't English.
+
+A Streamlit app ships with the repo: a page per model (live demo, performance, dataset,
+method notes), a dataset overview, and a page that runs one tweet through all three at once.
 
 ---
 
-## Quickstart (Scraper)
+## Repo layout
 
-**1. Set up the environment**
+```
+src/
+  scraper/            twscrape crawler: config, scraper, one-time account setup
+  data_cleaning/
+    base_cleaning.py    merged -> cleaned_tweets.csv: the ONE row set + the frozen split
+    splits.py           group-aware 70/15/15, persisted to data/processed/splits.csv
+    utils.py            atomic text helpers (pure string -> string)
+    pipeline.py         runs a step chain, enforces "no rows added or dropped"
+    preprocess_*.py     per-model step chains -> data/processed/<key>_input.csv
+  models/
+    metrics.py          the single metric definition all three models report
+    svm/ bilstm/ robertacnn/
+                        each: config, data, model, train, evaluate, predict, ner_bio
+scripts/
+  merge_datasets.py   the 4 raw year files -> data/processed/merged_tweets.csv
+  build_embeddings.py BiLSTM's 400d vectors (pretrained fastText + in-domain fastText)
+  compare_models.py   the three metrics.json -> data/models/comparison.md
+  checkpoint_parts.py split/restore the RoBERTa-CNN checkpoint around GitHub's 100MB limit
+app/
+  streamlit_app.py    entry point; registry.py is where a model page is added
+  page_model.py page_dataset.py page_compare.py ui.py metrics.py confusion.py ner.py language.py
+data/
+  processed/          merged_tweets.csv (gold labels), splits.csv, <key>_input.csv
+  models/<key>/       checkpoint, metrics.json, metrics.txt, predictions.csv
+  embeddings/         vocab.json, embeddings.npy, in-domain fastText model
+tests/test_cleaning.py
+```
+
+---
+
+## Quickstart: run the app
+
+Trained checkpoints, metrics and predictions are committed under `data/models/`, so cloning
+is enough - no training required.
+
 ```bash
 python -m venv venv
 venv\Scripts\activate
 pip install -r requirements.txt
-```
 
-**2. Add your Twitter account** (one-time, each teammate does this once)
-```bash
-python -m src.scraper.add_accounts
-```
-Choose **Mode 1** (cookie-based). Get your cookies from:
-> twitter.com → F12 → Application → Cookies → `https://twitter.com` → copy `auth_token` and `ct0`
-
-Paste them as: `auth_token=abc123; ct0=xyz456`
-
-**3. Run the scraper**
-```bash
-python -m src.scraper.scraper
-```
-
-Output is saved to `data/raw/worldcup2018_tweets.csv`. Re-running is safe — it skips tweets already collected.
-
----
-
-## Running the app without retraining
-
-Trained checkpoints, metrics, and predictions are committed under `data/models/` so
-cloning the repo is enough to run `streamlit run app/streamlit_app.py` — no training
-required. One extra step first, because RoBERTa-CNN's checkpoint (~500MB) is too big
-for a single git blob and is committed as split parts instead:
-
-```bash
 python -m scripts.checkpoint_parts restore
+streamlit run app/streamlit_app.py
 ```
 
-This rebuilds `data/models/robertacnn/best_model.pt` from
-`data/models/robertacnn/best_model.pt.parts/` and verifies it byte-for-byte against a
-checksum. Safe to re-run — it skips any checkpoint that's already present.
+The `restore` step exists because RoBERTa-CNN's checkpoint (~500MB) is too big for a single
+git blob and is committed as split parts instead. It rebuilds
+`data/models/robertacnn/best_model.pt` from `data/models/robertacnn/best_model.pt.parts/`
+and verifies it byte-for-byte against a checksum. Safe to re-run - it skips any checkpoint
+that's already present.
+
+Tests:
+
+```bash
+python -m pytest tests/ -v
+```
 
 ---
 
-## Modelling pipeline and fair evaluation
+## Results
 
-Three models are compared on four tasks (sentiment, emotion, topic, ner). For the
-comparison to mean anything, the row set and the split are frozen **once**, upstream of
-every model:
+All three models scored on the same **4,130** test tweets. Sentiment headline:
+
+| Model | Accuracy | Macro F1 |
+|---|---|---|
+| SVM (TF-IDF) | 0.7114 | 0.6868 |
+| BiLSTM | 0.7337 | 0.7177 |
+| RoBERTa-CNN | 0.7414 | 0.7308 |
+
+Emotion, topic and NER tables are in [data/models/comparison.md](data/models/comparison.md),
+regenerated by `python scripts/compare_models.py`. Per-model class-level reports are in each
+`data/models/<key>/metrics.txt`.
+
+---
+
+## Rebuild everything from scratch
 
 ```bash
+python scripts/merge_datasets.py                 # 4 raw year files -> merged_tweets.csv
 python -m src.data_cleaning.base_cleaning        # clean, dedup, stamp split  -> 27,582 rows
 python -m src.data_cleaning.preprocess_svm       # pure text rewrite, row count unchanged
 python -m src.data_cleaning.preprocess_bilstm
 python -m src.data_cleaning.preprocess_robertacnn
 
-python -m src.models.svm.train                   # then .evaluate for each model
+python scripts/build_embeddings.py               # BiLSTM only; ~8GB RAM for the fastText step
+
+python -m src.models.svm.train                   # then .evaluate, for each of the three
+python -m src.models.svm.evaluate
+python -m src.models.bilstm.train
+python -m src.models.bilstm.evaluate
+python -m src.models.robertacnn.train
+python -m src.models.robertacnn.evaluate
+
 python scripts/compare_models.py                 # -> data/models/comparison.md
 ```
 
-What makes the numbers comparable:
+`merge_datasets.py` reads `data/raw/`, which is gitignored - the scraped CSVs aren't
+committed. `merged_tweets.csv` **is** committed, because it holds the hand-verified labels.
 
-- **One row set.** Dedup runs in `base_cleaning.py` on `utils.canonical_key()` — a
-  normalisation harsher than any single model's — *before* the split is stamped. The
+---
+
+## Why the three numbers are comparable
+
+For the comparison to mean anything, the row set and the split are frozen **once**, upstream
+of every model:
+
+- **One row set.** Dedup runs in `base_cleaning.py` on `utils.canonical_key()` - a
+  normalisation harsher than any single model's - *before* the split is stamped. The
   per-model `preprocess_*.py` stages are pure text rewrites and may not add or drop a row
   (`pipeline.py` raises if they do). All three `*_input.csv` files therefore carry identical
   ids, and all three models are scored on the same 4,130 test tweets.
@@ -77,7 +145,7 @@ What makes the numbers comparable:
   on one side of the 70/15/15 partition, so a tweet cannot appear in train with its near-twin
   in test.
 - **One metric definition.** Every headline number comes from `src/models/metrics.py`:
-  Accuracy + macro P/R/F1 per classification task, and entity-type presence F1 for NER — the
+  Accuracy + macro P/R/F1 per classification task, and entity-type presence F1 for NER - the
   only NER framing all three models share. `compare_models.py` refuses to build a table if
   the models report different test-set sizes.
 - **Matched class weighting.** All three use `min(n / (k * count), 10.0)` inverse-frequency
@@ -90,8 +158,8 @@ Known method difference to state in the report: the SVM does not use the `val` s
 
 ## Text cleaning utilities
 
-`src/data_cleaning/utils.py` holds the atomic text helpers. Each is pure — string in,
-string out — and the `preprocess_*.py` pipelines compose them into per-model chains.
+`src/data_cleaning/utils.py` holds the atomic text helpers. Each is pure - string in,
+string out - and the `preprocess_*.py` pipelines compose them into per-model chains.
 
 ```python
 from src.data_cleaning.utils import demojize_to_token
@@ -104,3 +172,21 @@ print(cleaned)
 Two helpers are not part of any model's chain and exist only to decide the shared row set:
 `canonical_key()` (dedup key) and `group_key()` (near-duplicate cluster key). See the
 section above.
+
+---
+
+## Data collection
+
+2014, 2018 and 2026 tweets were scraped with [twscrape](https://github.com/vladkens/twscrape);
+2022 came from a Kaggle dataset. Scraping needs a one-time cookie-based account setup:
+
+```bash
+python -m src.scraper.add_accounts    # Mode 1 (cookie-based)
+python -m src.scraper.scraper
+```
+
+Output lands in `data/raw/` and re-running is safe - it skips tweets already collected.
+Full details in [scraper.md](scraper.md).
+
+Labels (`sentiment`, `emotion`, `topic`, `ner`) were annotated by hand, not generated by a
+model.
