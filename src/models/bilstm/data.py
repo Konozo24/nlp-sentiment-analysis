@@ -33,6 +33,12 @@ from .ner_bio import add_bio_tags
 
 PAD_ID, UNK_ID = 0, 1
 
+# Padded NER slots need *some* id, and 0 is a real tag ("B-EVENT", since the tag
+# list is sorted) rather than "O". That is safe only because every consumer masks
+# them out - the CRF via its mask argument, evaluate.py via batch["mask"]. Any new
+# NER metric must mask too, or padding will be scored as entity predictions.
+NER_PAD_ID = 0
+
 
 # --------------------------------------------------------------------------- #
 # loading
@@ -159,7 +165,7 @@ def collate_fn(batch: list[dict[str, torch.Tensor]]) -> dict[str, torch.Tensor]:
         [item["input_ids"] for item in batch], batch_first=True, padding_value=PAD_ID
     )
     ner = nn.utils.rnn.pad_sequence(
-        [item["ner"] for item in batch], batch_first=True, padding_value=0
+        [item["ner"] for item in batch], batch_first=True, padding_value=NER_PAD_ID
     )
     collated = {"input_ids": input_ids, "mask": input_ids != PAD_ID, "ner": ner}
 
@@ -211,6 +217,7 @@ def unk_rate(df: pd.DataFrame, vocab: dict[str, int]) -> float:
 
 
 __all__ = [
+    "NER_PAD_ID",
     "PAD_ID",
     "UNK_ID",
     "TweetDataset",
