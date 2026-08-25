@@ -66,7 +66,7 @@ def _render_preprocessing(specs: list[ModelSpec]) -> None:
     st.caption(
         "Why there are three input files. SVM and BiLSTM lowercase, strip punctuation, "
         "and demojize (differently - `soccerball` vs `soccer_ball`), because their "
-        "features are bag-of-words and a fixed vocabulary. RoBERTa-CNN keeps casing, "
+        "features are bag-of-words and a fixed vocabulary. RoBERTa-base keeps casing, "
         "punctuation, and emoji, because its tokenizer was pretrained on raw tweets."
     )
 

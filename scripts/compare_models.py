@@ -18,7 +18,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 MODELS_DIR = PROJECT_ROOT / "data" / "models"
 OUT_PATH = MODELS_DIR / "comparison.md"
 
-MODELS = {"svm": "SVM (TF-IDF)", "bilstm": "BiLSTM", "robertacnn": "RoBERTa-CNN"}
+MODELS = {"svm": "SVM (TF-IDF)", "bilstm": "BiLSTM", "robertabase": "RoBERTa-base"}
 TASKS = ["sentiment", "emotion", "topic"]
 COLUMNS = [
     ("accuracy", "Accuracy"),
@@ -55,7 +55,7 @@ def check_comparable(metrics: dict[str, dict]) -> int:
             f"Models were scored on different numbers of test rows: {sizes}.\n"
             "The comparison would be meaningless. Re-run:\n"
             "  python -m src.data_cleaning.base_cleaning\n"
-            "  python -m src.data_cleaning.preprocess_{svm,bilstm,robertacnn}\n"
+            "  python -m src.data_cleaning.preprocess_{svm,bilstm,roberta}\n"
             "then retrain and re-evaluate."
         )
 

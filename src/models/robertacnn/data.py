@@ -11,7 +11,7 @@ import torch
 
 from .config import DATA_PATH, MAX_LEN, MAX_SUBWORDS, SEED, TASKS  # noqa: F401 — SEED used by make_batches
 from .ner_bio import add_bio_tags
-from src.data_cleaning.preprocess_robertacnn import clean_for_robertacnn
+from data_cleaning.preprocess_roberta import clean_for_roberta
 
 def load_and_split():
     """Read the CSV, add BIO tags, and return the shared train/val/test split.
@@ -26,10 +26,10 @@ def load_and_split():
         raise ValueError(
             f"{DATA_PATH} has no 'split' column — re-run "
             "'python -m src.data_cleaning.base_cleaning' then "
-            "'python -m src.data_cleaning.preprocess_robertacnn'"
+            "'python -m src.data_cleaning.preprocess_roberta'"
         )
 
-    df = add_bio_tags(df, clean_for_robertacnn)
+    df = add_bio_tags(df, clean_for_roberta)
     parts = [df[df["split"] == name].reset_index(drop=True) for name in ("train", "val", "test")]
     train_df, val_df, test_df = parts
     print(f"Split: train {len(train_df)}, val {len(val_df)}, test {len(test_df)}")

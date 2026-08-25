@@ -34,9 +34,9 @@ def _about(name: str) -> str:
     return (ABOUT_DIR / f"{name}.md").read_text(encoding="utf-8")
 
 
-def _paths(key: str) -> dict[str, Path]:
+def _paths(key: str, data_key: str | None = None) -> dict[str, Path]:
     return {
-        "data_path": PROJECT_ROOT / "data" / "processed" / f"{key}_input.csv",
+        "data_path": PROJECT_ROOT / "data" / "processed" / f"{data_key or key}_input.csv",
         "model_dir": PROJECT_ROOT / "data" / "models" / key,
     }
 
@@ -130,36 +130,36 @@ BILSTM_SPEC = ModelSpec(
 
 
 # --------------------------------------------------------------------------- #
-# RoBERTa-CNN (fine-tuned twitter-roberta-base + CNN pooling + CRF)
+# RoBERTa-base (fine-tuned twitter-roberta-base + attention pooling + CRF)
 # --------------------------------------------------------------------------- #
 
 
-@st.cache_resource(show_spinner="Loading RoBERTa-CNN (first run only - ~500MB checkpoint)...")
-def _load_robertacnn():
+@st.cache_resource(show_spinner="Loading RoBERTa-base (first run only - ~500MB checkpoint)...")
+def _load_robertabase():
     import sklearn  # noqa: F401 - must import before torch
 
-    from src.models.robertacnn.predict import load_model
+    from src.models.robertabase.predict import load_model
 
     return load_model()
 
 
-def _predict_robertacnn(tweet: str, bundle) -> dict | None:
-    from src.models.robertacnn.predict import predict_structured
+def _predict_robertabase(tweet: str, bundle) -> dict | None:
+    from src.models.robertabase.predict import predict_structured
 
     model, tokenizer, labels = bundle
     return predict_structured(tweet, model, tokenizer, labels)
 
 
-ROBERTACNN_SPEC = ModelSpec(
-    key="robertacnn",
-    label="RoBERTa-CNN",
+ROBERTABASE_SPEC = ModelSpec(
+    key="robertabase",
+    label="RoBERTa-base",
     icon=":material/hub:",
-    tagline="cardiffnlp/twitter-roberta-base (fine-tuned) -> CNN pooling -> 4 task heads + CRF.",
-    about_md=_about("robertacnn"),
-    load=_load_robertacnn,
-    predict=_predict_robertacnn,
-    **_paths("robertacnn"),
+    tagline="cardiffnlp/twitter-roberta-base (fine-tuned) -> attention pooling -> 4 task heads + CRF.",
+    about_md=_about("robertabase"),
+    load=_load_robertabase,
+    predict=_predict_robertabase,
+    **_paths("robertabase", data_key="roberta"),
 )
 
 
-MODEL_SPECS: list[ModelSpec] = [SVM_SPEC, BILSTM_SPEC, ROBERTACNN_SPEC]
+MODEL_SPECS: list[ModelSpec] = [SVM_SPEC, BILSTM_SPEC, ROBERTABASE_SPEC]

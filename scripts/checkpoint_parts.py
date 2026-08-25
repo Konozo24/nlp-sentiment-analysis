@@ -1,4 +1,4 @@
-"""Get RoBERTa-CNN's ~500MB checkpoint through git despite GitHub's 100MB
+"""Get RoBERTa's ~500MB checkpoints through git despite GitHub's 100MB
 per-file limit, by committing it as a set of smaller parts instead of the
 raw file. `split` (run once, before committing a new checkpoint) is the
 other half of this — see its own docstring for what it writes.

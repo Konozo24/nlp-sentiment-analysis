@@ -1,0 +1,74 @@
+{
+  "model": "robertacnn",
+  "n_test": 4130,
+  "sentiment": {
+    "accuracy": 0.7588377723970944,
+    "macro_precision": 0.7346377296995037,
+    "macro_recall": 0.7818736366936023,
+    "macro_f1": 0.748416279187595,
+    "weighted_f1": 0.7616056720329272,
+    "labels": [
+      "negative",
+      "neutral",
+      "positive"
+    ]
+  },
+  "emotion": {
+    "accuracy": 0.7021791767554479,
+    "macro_precision": 0.510728458377245,
+    "macro_recall": 0.6353141524243411,
+    "macro_f1": 0.5545247693427025,
+    "weighted_f1": 0.7146692504022837,
+    "labels": [
+      "anger",
+      "disgust",
+      "fear",
+      "joy",
+      "neutral",
+      "sadness",
+      "surprise"
+    ]
+  },
+  "topic": {
+    "accuracy": 0.7801452784503632,
+    "macro_precision": 0.7476633082846562,
+    "macro_recall": 0.7914845736577361,
+    "macro_f1": 0.7647284814170056,
+    "weighted_f1": 0.781766286774674,
+    "labels": [
+      "controversy",
+      "event & hosting",
+      "fans & atmosphere",
+      "match",
+      "other",
+      "player & team"
+    ]
+  },
+  "ner": {
+    "micro_f1": 0.9557522123893806,
+    "macro_f1": 0.9155376606725854,
+    "exact_match_accuracy": 0.8469733656174334,
+    "per_type": {
+      "PER": {
+        "precision": 0.9290012033694344,
+        "recall": 0.8186638388123012,
+        "f1": 0.8703494926719278
+      },
+      "ORG": {
+        "precision": 0.9699551569506727,
+        "recall": 0.944954128440367,
+        "f1": 0.9572914361584421
+      },
+      "LOC": {
+        "precision": 0.8663853727144867,
+        "recall": 0.8158940397350993,
+        "f1": 0.8403819918144612
+      },
+      "EVENT": {
+        "precision": 0.9970552147239263,
+        "recall": 0.9912173700902659,
+        "f1": 0.9941277220455101
+      }
+    }
+  }
+}

@@ -49,7 +49,7 @@ at a time - the standard pre-neural approach to sequence tagging, reframing
 
 It's still a linear model with no notion of the *sentence itself*, only a
 sliding local window, which is the honest limit of this method - unlike
-BiLSTM's and RoBERTa-CNN's CRF taggers, which see one contextual vector per
+BiLSTM's and RoBERTa-base's CRF taggers, which see one contextual vector per
 word informed by the whole tweet. Scored two ways: its own token-level BIO
 F1 (Performance tab), and the entity-type-presence framing all three models
 share, by collapsing its predicted tags the same way the other two do.

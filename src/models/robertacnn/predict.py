@@ -10,7 +10,7 @@ import sklearn  # noqa: F401 — must import before torch
 import torch
 from transformers import AutoTokenizer
 
-from src.data_cleaning.preprocess_robertacnn import clean_for_robertacnn
+from data_cleaning.preprocess_roberta import clean_for_roberta
 
 from .config import ENCODER_NAME, MAX_LEN, MODEL_DIR, TASKS
 from .data import encode_batch, load_json
@@ -31,7 +31,7 @@ def load_model():
 
 @torch.no_grad()
 def predict_structured(tweet: str, model, tokenizer, labels):
-    words = clean_for_robertacnn(tweet).split()[:MAX_LEN]
+    words = clean_for_roberta(tweet).split()[:MAX_LEN]
     if not words:
         return None
 

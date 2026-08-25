@@ -10,7 +10,7 @@ Run:  python -m src.models.robertacnn.ner_bio
 import pandas as pd
 import string
 
-from src.data_cleaning.preprocess_robertacnn import clean_for_robertacnn
+from data_cleaning.preprocess_roberta import clean_for_roberta
 
 from .config import DATA_PATH
 
@@ -73,5 +73,5 @@ def add_bio_tags(df: pd.DataFrame, clean_fn) -> pd.DataFrame:
 
 if __name__ == "__main__":
     df = pd.read_csv(DATA_PATH, encoding="utf-8")
-    df = add_bio_tags(df, clean_for_robertacnn)
+    df = add_bio_tags(df, clean_for_roberta)
     print(df[["tweet", "bio_tags"]].head(3).to_string())

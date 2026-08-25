@@ -1,4 +1,4 @@
-"""World Cup tweet analysis demo for SVM, BiLSTM, RoBERTa-CNN, plus a compare page.
+"""World Cup tweet analysis demo for SVM, BiLSTM, RoBERTa-base, plus a compare page.
 
 Run:  streamlit run app/streamlit_app.py
 """

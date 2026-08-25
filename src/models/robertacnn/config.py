@@ -11,7 +11,7 @@ architecture (CNN vs BiLSTM+attention) differs.
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
-DATA_PATH = PROJECT_ROOT / "data" / "processed" / "robertacnn_input.csv"
+DATA_PATH = PROJECT_ROOT / "data" / "processed" / "roberta_input.csv"
 MODEL_DIR = PROJECT_ROOT / "data" / "models" / "robertacnn"
 
 SEED = 42

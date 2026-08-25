@@ -5,7 +5,7 @@ Run:  python -m pytest tests/ -v      (or)      python -m tests.test_cleaning
 
 from src.data_cleaning.preprocess_svm import clean_for_svm
 from src.data_cleaning.preprocess_bilstm import clean_for_bilstm
-from src.data_cleaning.preprocess_robertacnn import clean_for_robertacnn
+from data_cleaning.preprocess_roberta import clean_for_roberta
 from src.data_cleaning.utils import (
     demojize_to_token,
     normalize_whitespace,
@@ -76,8 +76,8 @@ def test_bilstm_pipeline_normalises_hard():
     assert out == "usermention the best goal red_heart worldcup"
 
 
-def test_robertacnn_pipeline_is_minimal():
-    out = clean_for_robertacnn("@fifa The BEST goal!!! ❤️ https://t.co/x #WorldCup")
+def test_roberta_pipeline_is_minimal():
+    out = clean_for_roberta("@fifa The BEST goal!!! ❤️ https://t.co/x #WorldCup")
     assert out == "@user The BEST goal!!! ❤️ WorldCup"
 
 

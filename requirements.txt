@@ -26,7 +26,7 @@ torch==2.13.0
 scikit-learn==1.9.0
 tqdm==4.68.4
 pytorch-crf==0.7.2
-# RobertaCNN - pretrained Twitter-RoBERTa encoder
+# Roberta - pretrained Twitter-RoBERTa encoder
 transformers==5.13.1
 
 # BiLSTM - fastText word embeddings (pretrained + trained in-domain)
