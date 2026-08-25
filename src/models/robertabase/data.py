@@ -9,11 +9,13 @@ import json
 import pandas as pd
 import torch
 
-from .config import DATA_PATH, MAX_LEN, MAX_SUBWORDS, SEED, TASKS  # noqa: F401 — SEED used by make_batches
-from .ner_bio import add_bio_tags
 from src.data_cleaning.preprocess_roberta import clean_for_roberta
 
-def load_and_split():
+from .config import DATA_PATH, MAX_LEN, MAX_SUBWORDS, TASKS
+from .ner_bio import add_bio_tags
+
+
+def load_and_split() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """Read the CSV, add BIO tags, and return the shared train/val/test split.
 
     Split labels come from data/processed/splits.csv (70/15/15).
@@ -36,22 +38,22 @@ def load_and_split():
     return train_df, val_df, test_df
 
 
-def build_labels(train_df) -> dict[str, list[str]]:
+def build_labels(train_df: pd.DataFrame) -> dict[str, list[str]]:
     labels = {task: sorted(set(train_df[task].astype(str))) for task in TASKS}
     labels["ner"] = sorted({tag for tags in train_df["bio_tags"] for tag in tags.split()})
     return labels
 
 
-def save_json(obj, path):
+def save_json(obj: dict, path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(obj, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
-def load_json(path):
+def load_json(path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def encode_batch(word_lists, tag_lists, tokenizer, ner_ids):
+def encode_batch(word_lists: list[list[str]], tag_lists: list[list[str]], tokenizer, ner_ids: dict[str, int]) -> dict[str, torch.Tensor]:
     enc = tokenizer(
         word_lists, is_split_into_words=True, truncation=True,
         max_length=MAX_SUBWORDS, padding=True, return_tensors="pt",
@@ -85,8 +87,15 @@ def encode_batch(word_lists, tag_lists, tokenizer, ner_ids):
     }
 
 
-def make_batches(df, tokenizer, labels, batch_size, shuffle=False):
-    df = df.sample(frac=1, random_state=SEED) if shuffle else df
+def make_batches(
+    df: pd.DataFrame,
+    tokenizer,
+    labels: dict[str, list[str]],
+    batch_size: int,
+    shuffle: bool = False,
+    shuffle_seed: int | None = None,
+):
+    df = df.sample(frac=1, random_state=shuffle_seed) if shuffle else df
     ner_ids = {tag: i for i, tag in enumerate(labels["ner"])}
     class_ids = {task: {name: i for i, name in enumerate(labels[task])} for task in TASKS}
 

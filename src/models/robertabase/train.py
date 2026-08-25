@@ -1,9 +1,8 @@
 """Train RobertaBase.
 
-Same discriminative-LR + warmup/decay recipe as TRABSA (see that file for
-the full reasoning) — this keeps the two models comparable, so any
-performance difference in the report traces to the architecture (CNN vs
-BiLSTM+attention), not to different training regimes.
+Same discriminative-LR + warmup/decay recipe as RoBERTa-CNN, so performance
+differences trace to the pooling architecture rather than different training
+regimes.
 
 Run:  python -m src.models.robertabase.train [--epochs N]
 """
@@ -26,7 +25,7 @@ from .model import RobertaBase
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 
-def make_loss_functions(train_df, labels):
+def make_loss_functions(train_df, labels: dict[str, list[str]]) -> dict[str, nn.Module]:
     loss_fns = {}
     for task in TASKS:
         counts = train_df[task].astype(str).value_counts()
@@ -35,7 +34,7 @@ def make_loss_functions(train_df, labels):
     return loss_fns
 
 
-def batch_loss(model, batch, loss_fns):
+def batch_loss(model: nn.Module, batch: dict, loss_fns: dict[str, nn.Module]) -> torch.Tensor:
     batch = {name: tensor.to(DEVICE) for name, tensor in batch.items()}
     predictions = model(
         batch["input_ids"], batch["attention_mask"], batch["word_index"], batch["word_mask"]
@@ -45,7 +44,7 @@ def batch_loss(model, batch, loss_fns):
     return loss
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--epochs", type=int, default=MAX_EPOCHS)
     args = parser.parse_args()
@@ -83,7 +82,9 @@ def main():
     for epoch in range(1, args.epochs + 1):
         model.train()
         train_loss = 0.0
-        batches = make_batches(train_df, tokenizer, labels, BATCH_SIZE, shuffle=True)
+        batches = make_batches(
+            train_df, tokenizer, labels, BATCH_SIZE, shuffle=True, shuffle_seed=SEED + epoch
+        )
         for batch in tqdm(batches, total=n_train_batches, desc=f"epoch {epoch}", leave=False):
             loss = batch_loss(model, batch, loss_fns)
             optimizer.zero_grad(set_to_none=True)

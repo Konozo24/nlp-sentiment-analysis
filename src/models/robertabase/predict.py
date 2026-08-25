@@ -10,7 +10,7 @@ import sklearn  # noqa: F401 — must import before torch
 import torch
 from transformers import AutoTokenizer
 
-from data_cleaning.preprocess_roberta import clean_for_roberta
+from src.data_cleaning.preprocess_roberta import clean_for_roberta
 
 from .config import ENCODER_NAME, MAX_LEN, MODEL_DIR, TASKS
 from .data import encode_batch, load_json
@@ -19,7 +19,7 @@ from .model import RobertaBase
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 
-def load_model():
+def load_model() -> tuple[RobertaBase, AutoTokenizer, dict[str, list[str]]]:
     labels = load_json(MODEL_DIR / "labels.json")
     tokenizer = AutoTokenizer.from_pretrained(ENCODER_NAME)
     model = RobertaBase.from_labels(labels)
@@ -30,7 +30,9 @@ def load_model():
 
 
 @torch.no_grad()
-def predict_structured(tweet: str, model, tokenizer, labels):
+def predict_structured(
+    tweet: str, model: RobertaBase, tokenizer, labels: dict[str, list[str]]
+) -> dict | None:
     words = clean_for_roberta(tweet).split()[:MAX_LEN]
     if not words:
         return None
@@ -54,7 +56,7 @@ def predict_structured(tweet: str, model, tokenizer, labels):
     return result
 
 
-def predict(tweet: str, model, tokenizer, labels):
+def predict(tweet: str, model: RobertaBase, tokenizer, labels: dict[str, list[str]]) -> None:
     result = predict_structured(tweet, model, tokenizer, labels)
     if result is None:
         print("  (nothing left after cleaning)")
