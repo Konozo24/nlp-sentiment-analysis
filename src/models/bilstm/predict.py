@@ -25,8 +25,8 @@ from .model import BiLSTM
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# which columns of the concatenated vector the in-domain model owns. For the
-# 'concat' variant the pretrained half occupies the first 300 columns.
+# the in-domain half owns the last 100 of the 400 columns; the pretrained half
+# (cols 0-299) cannot be recomposed here without cc.en.300.bin, all 7.2GB of it
 INDOMAIN_DIM = 100
 
 
@@ -44,12 +44,8 @@ def load_indomain_model():
 
 
 def load_model():
-    """Rebuild the trained model from the checkpoint train.py saved.
+    """rebuild the trained model from disk"""
 
-    Also used by evaluate.py and the Streamlit app. weights_only=False is
-    required because the checkpoint carries the label lists alongside the
-    tensors; the file is one we produced ourselves, not untrusted input.
-    """
     labels = load_json(MODEL_DIR / "labels.json")
     vocab = load_vocab()
     embeddings = load_embeddings()
@@ -81,9 +77,9 @@ def embed_words(words, vocab, embeddings, indomain_model):
         if indomain_model is None:
             continue
 
-        # compose the in-domain half from character n-grams and L2-normalise it
-        # the same way build_embeddings.py normalised the stored rows, so the
-        # composed vector lands on the same scale as everything around it.
+        # wv[word] works even for a word fastText never saw - it composes one
+        # from character n-grams. L2-normalise to match how build_embeddings.py
+        # normalised the stored rows, or this lands on a scale nothing else has.
         composed = np.asarray(indomain_model.wv[word], dtype=np.float32)
         composed /= max(float(np.linalg.norm(composed)), 1e-8)
         vectors[i, dim - INDOMAIN_DIM :] = torch.from_numpy(composed)

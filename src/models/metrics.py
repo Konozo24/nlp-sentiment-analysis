@@ -1,20 +1,18 @@
-"""Metric definitions shared by the SVM, BiLSTM and RoBERTa-CNN evaluators.
+"""Metrics shared by every model's evaluate.py, so the scores compare.
 
-Every number in data/models/comparison.md comes from here, so the three models
-are always scored the same way.
+Every number in data/models/comparison.md comes from here.
 
   sentiment / emotion / topic   single_label_report()
-      Accuracy and macro Precision/Recall/F1, plus weighted F1. Macro is the
-      headline figure: the classes are skewed and all three models train with
-      inverse-frequency class weights, so macro matches the training objective.
+      Accuracy and macro P/R/F1, plus weighted F1. Macro is the headline: the
+      classes are skewed and every model trains with inverse-frequency class
+      weights, so macro matches the training objective.
 
   ner                           entity_presence_report()
-      Which of PER/ORG/LOC/EVENT the tweet mentions, scored as a four-way
-      multi-label problem. This is the framing all three models can express:
-      the SVM predicts type presence directly, while the two sequence models'
-      BIO output is collapsed into it by types_from_bio(). Their token-level
-      BIO scores stay in their own evaluate.py and are not comparable with the
-      SVM, whose TF-IDF features carry no token positions.
+      Which of PER/ORG/LOC/EVENT a tweet mentions, as a four-way multi-label
+      problem - the one framing every model can express. The sequence models
+      collapse their BIO output into it with types_from_bio(); their
+      token-level scores stay in their own evaluate.py, where the differing
+      tokenisations make them incomparable.
 
 Each evaluator calls save_metrics() to write metrics.json for
 scripts/compare_models.py.
@@ -38,32 +36,18 @@ from sklearn.preprocessing import MultiLabelBinarizer
 ENTITY_TYPES = ["PER", "ORG", "LOC", "EVENT"]
 
 
-def parse_entity_types(ner_value) -> list[str]:
-    """Extract entity types from ``PER: Messi | ORG: FIFA`` annotations."""
-    if pd.isna(ner_value) or str(ner_value).strip().lower() == "none":
-        return []
-    return [
-        part.split(":", 1)[0].strip().upper()
-        for part in str(ner_value).split("|")
-        if ":" in part
-    ]
-
-
 def types_from_bio(tags: list[str]) -> list[str]:
     """['B-PER','I-PER','O','B-ORG'] -> ['PER','ORG'] — one BIO sequence's types."""
     return sorted({tag.split("-", 1)[1] for tag in tags if tag != "O" and "-" in tag})
 
 
 def findable_entity_types(tweet: str, ner_value) -> list[str]:
-    """Entity types that are both annotated for a tweet AND present in its text.
+    """Entity types both annotated for a tweet AND findable in its text.
 
-    An entity counts as present when its name, normalized with canonical_key(),
-    appears as a run of words in the tweet, likewise normalized. Annotated
-    entities that never appear in the text (about 5% of them) are excluded.
-
-    This is the gold label for entity_presence_report(), and the training target
-    for the SVM's NER head. Matching on canonical_key() rather than on any one
-    model's cleaning gives all three models an identical target.
+    Present means the entity's words appear as a run in the tweet, with both
+    sides normalised by canonical_key() - not by any one model's cleaning, so
+    every model is scored against the same gold. The ~5% of annotated entities
+    that never appear in the text are dropped rather than counted as misses.
 
         findable_entity_types("messi scores for argentina",
                               "PER: Messi | ORG: FIFA")   ->  ["PER"]
@@ -96,14 +80,11 @@ def _parse_entities(ner_value) -> list[tuple[str, str]]:
 
 
 def single_label_report(y_true, y_pred, label_names: list[str]) -> tuple[str, dict]:
-    """Score one single-label task.
+    """Score one single-label task: sklearn's per-class text report, and a
+    dict of accuracy, macro P/R/F1, weighted F1 and the label list.
 
-    Returns sklearn's per-class report as text, and a dict of accuracy, macro
-    precision/recall/F1, weighted F1 and the label list.
-
-    Scoring covers every class in `label_names`, including ones absent from both
-    y_true and y_pred, so a class the model never predicts counts as zero rather
-    than being left out of the macro average.
+    Passing every class in `label_names` to sklearn means one the model never
+    predicts scores zero instead of being dropped from the macro average.
     """
     label_ids = list(range(len(label_names)))
     text = classification_report(
@@ -129,12 +110,11 @@ def single_label_report(y_true, y_pred, label_names: list[str]) -> tuple[str, di
 def entity_presence_report(true_types, pred_types) -> tuple[str, dict]:
     """Score entity-type presence as a four-way multi-label problem.
 
-    Both arguments are sequences of entity-type lists, one per tweet, e.g.
-    [['PER','ORG'], [], ['LOC']]; gold normally comes from
-    findable_entity_types().
+    Both arguments are one entity-type list per tweet, e.g. [['PER','ORG'],
+    [], ['LOC']]; gold normally comes from findable_entity_types().
 
     Returns a text block and a dict of micro F1, macro F1, exact-match accuracy
-    (all four types simultaneously correct) and per-type precision/recall/F1.
+    (all four types right at once) and per-type P/R/F1.
     """
     binarizer = MultiLabelBinarizer(classes=ENTITY_TYPES).fit([ENTITY_TYPES])
     true = binarizer.transform(true_types)
@@ -168,10 +148,9 @@ def entity_presence_report(true_types, pred_types) -> tuple[str, dict]:
 def save_metrics(model_name: str, n_test: int, headlines: dict, model_dir) -> None:
     """Write metrics.json into model_dir for scripts/compare_models.py.
 
-    `headlines` maps each task name to the dict returned by
-    single_label_report() or entity_presence_report(). The model name and the
-    test-set size are stored alongside them; compare_models.py checks n_test
-    before building a table.
+    `headlines` maps a task name to the dict single_label_report() or
+    entity_presence_report() returned. n_test is stored too, because
+    compare_models.py checks it matches before tabulating.
     """
     model_dir.mkdir(parents=True, exist_ok=True)
     payload = {"model": model_name, "n_test": int(n_test), **headlines}
@@ -183,8 +162,8 @@ def save_metrics(model_name: str, n_test: int, headlines: dict, model_dir) -> No
 def save_predictions(model_dir, ids, gold: dict[str, list[str]], pred: dict[str, list[str]]) -> None:
     """Write predictions.csv (id, task, gold, pred) for the single-label tasks.
 
-    Long format, one row per (tweet, task), label strings rather than ids so
-    the file is readable without the encoder that produced it.
+    One row per (tweet, task), with label names rather than ids so the file
+    reads without the encoder that produced them.
     """
     assert gold.keys() == pred.keys(), "gold and pred must cover the same tasks"
     rows = []
@@ -206,7 +185,6 @@ __all__ = [
     "ENTITY_TYPES",
     "entity_presence_report",
     "findable_entity_types",
-    "parse_entity_types",
     "save_metrics",
     "save_predictions",
     "single_label_report",

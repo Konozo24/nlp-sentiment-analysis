@@ -17,9 +17,8 @@ Tweets vary in length, so padding happens in collate_fn - the standard PyTorch
 place for it - rather than being baked into a hand-rolled batch generator.
 """
 
-import json  # noqa: I001 - import order below is intentional (see next line)
+import json
 
-# sklearn must import before torch, or Windows raises a heap-corruption crash
 import sklearn  # noqa: F401
 
 import numpy as np
@@ -51,7 +50,7 @@ def load_and_split() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     Split labels come from data/processed/splits.csv (70/15/15).
     """
     df = pd.read_csv(DATA_PATH, encoding="utf-8")
-    df = df[df["lang"] == "en"]  # project scope: English tweets only
+    df = df[df["lang"] == "en"]  # filter to English tweets only
     df = df.dropna(subset=["tweet", *TASKS]).reset_index(drop=True)
 
     if "split" not in df.columns:
@@ -120,11 +119,10 @@ def encode_words(
 
 
 class TweetDataset(Dataset):
-    """Tweets as tensors, tokenised once up front rather than once per epoch.
+    """Turns every tweet into tensors once, here, instead of once per epoch.
 
-    Labels are optional so the same class serves inference, where there are
-    none - predict.py builds a single-item batch through the same collate_fn,
-    which keeps training and inference on one code path.
+    with_targets=False leaves the labels out, so predict.py can reuse this for
+    tweets that have no answers yet.
     """
 
     def __init__(
@@ -156,11 +154,7 @@ class TweetDataset(Dataset):
 
 
 def collate_fn(batch: list[dict[str, torch.Tensor]]) -> dict[str, torch.Tensor]:
-    """Pad a list of variable-length examples into rectangular tensors.
-
-    pad_sequence pads to the longest tweet IN THIS BATCH, not to MAX_LEN, so
-    short batches stay small and the LSTM does less wasted work.
-    """
+    """Stack tweets of different lengths into one rectangle, padding the short ones."""
     input_ids = nn.utils.rnn.pad_sequence(
         [item["input_ids"] for item in batch], batch_first=True, padding_value=PAD_ID
     )
@@ -203,11 +197,7 @@ def make_loader(
 
 
 def unk_rate(df: pd.DataFrame, vocab: dict[str, int]) -> float:
-    """Share of tokens with no vocabulary entry - reported in the README/paper.
-
-    Worth measuring per variant: it is the single number that justifies using
-    fastText over GloVe, since fastText composes a vector for anything.
-    """
+    """How many words the vocabulary has never seen, as a share of all words."""
     total = misses = 0
     for text in df["tweet"].astype(str):
         for word in text.split()[:MAX_LEN]:

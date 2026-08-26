@@ -1,17 +1,9 @@
 """Train the BiLSTM.
 
-Simpler than the transformer members' training loops: with the embedding
-table frozen (see model.py), every trainable parameter starts randomly
-initialised, so training needs only one flat learning rate and no warmup.
-
-What is kept: class weights (neutral outnumbers negative roughly 3:1, so an
-unweighted loss would learn to answer 'neutral'), gradient clipping, and early
-stopping on validation loss.
-
 Run:  python -m src.models.bilstm.train [--epochs N] [--resume]
 """
 
-import argparse  # noqa: I001 - import order below is deliberate (see next comment)
+import argparse
 import random
 
 import sklearn  # noqa: F401 - must import before torch (Windows heap-corruption crash otherwise)
@@ -83,6 +75,7 @@ def batch_loss(model: nn.Module, batch: dict, loss_fns: dict[str, nn.Module]) ->
     """Summed multi-task loss for one batch, already moved to DEVICE."""
     predictions = model(batch["input_ids"], batch["mask"])
     loss = sum(loss_fns[task](predictions[task], batch[task]) for task in TASKS)
+
     # the CRF returns log-likelihood, so negate it to get a loss to minimise
     return loss - model.crf(predictions["ner"], batch["ner"], mask=batch["mask"], reduction="mean")
 
@@ -142,10 +135,11 @@ def main() -> None:
     parser.add_argument("--resume", action="store_true", help="continue from the saved checkpoint")
     args = parser.parse_args()
 
-    set_seed()
+    set_seed()  # make the run reproducible
 
-    train_df, val_df, _ = load_and_split()
-    labels = build_labels(train_df)
+    # data
+    train_df, val_df, _ = load_and_split()  # exclude test split
+    labels = build_labels(train_df)  # class names come from train only
     vocab = load_vocab()
     embeddings = load_embeddings()
 
@@ -156,18 +150,22 @@ def main() -> None:
     train_loader = make_loader(train_df, vocab, labels, BATCH_SIZE, shuffle=True, pin_memory=pin)
     val_loader = make_loader(val_df, vocab, labels, BATCH_SIZE, pin_memory=pin)
 
+    # model, losses, optimiser
     model = BiLSTM.from_labels(labels, embeddings).to(DEVICE)
     trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print(f"Trainable parameters: {trainable:,} (the embedding table is frozen)")
 
     loss_fns = make_loss_functions(train_df, labels)
+
     optimizer = torch.optim.AdamW(
         [p for p in model.parameters() if p.requires_grad], lr=LR, weight_decay=WEIGHT_DECAY
     )
 
+    # evaluate.py and predict.py rebuild the model from this file
     MODEL_DIR.mkdir(parents=True, exist_ok=True)
     save_json(labels, MODEL_DIR / "labels.json")
 
+    # resume from a checkpoint, if asked 
     start_epoch = 1
     best_val_loss = float("inf")
     if args.resume and CHECKPOINT_PATH.exists():
@@ -178,12 +176,14 @@ def main() -> None:
         best_val_loss = checkpoint["val_loss"]
         print(f"Resumed from epoch {checkpoint['epoch']} (val loss {best_val_loss:.4f})")
 
+    # training loop 
     bad_epochs = 0
     for epoch in range(start_epoch, args.epochs + 1):
         train_loss = train_one_epoch(model, train_loader, optimizer, loss_fns, epoch)
         val_loss = evaluate_loss(model, val_loader, loss_fns)
         print(f"Epoch {epoch:2d}: train loss {train_loss:.4f} | val loss {val_loss:.4f}")
 
+        # save only on improvement
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             bad_epochs = 0

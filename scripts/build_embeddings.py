@@ -1,22 +1,18 @@
-"""Give the BiLSTM a vector for every token — including 2026 World Cup slang
-that no published embedding has ever seen, because it postdates all of them.
+"""Build embeddings.npy, the 400d-per-token matrix the BiLSTM loads.
 
-No single embedding source covers that, so this concatenates two fastText
-sources per token instead of using one:
+Two fastText sources are concatenated per token, since neither covers the job
+alone:
 
-  cols   0-299  pretrained fastText (cc.en.300, Common Crawl) — general
-                English semantics, and, since fastText composes a vector from
-                character n-grams, a usable vector even for words it never
-                saw ('goooaaal' -> 'goo'+'ooa'+'aal' rather than <unk>, which
-                is what GloVe/Word2Vec would do to most of Twitter).
-  cols 300-399  in-domain fastText, trained here on our own World Cup tweets
-                (~10k from 2026) — whatever current slang means, it means it
-                *here*; no external corpus can supply that.
+  cols   0-299  pretrained cc.en.300 (Common Crawl) — general English
+  cols 300-399  in-domain, trained here on our own World Cup tweets — 2026
+                slang that postdates every published embedding
 
-Four cacheable steps get there — vocab, indomain, pretrained, assemble — each
-explained in its own function below; `--only` runs one instead of the whole
-chain. `pretrained` alone needs ~8GB RAM to hold cc.en.300.bin, which is why
-it's a separate step: that cost is paid once, not on every run.
+Both halves are fastText, so a token either source is missing gets a vector
+composed from its character n-grams rather than dropped to <unk>.
+
+Four steps — vocab, indomain, pretrained, assemble — each write a file, so
+`--only` reruns one without the rest. `pretrained` needs ~8GB RAM to hold
+cc.en.300.bin, which is why it is a step of its own.
 
   python scripts/build_embeddings.py                      # all four steps
   python scripts/build_embeddings.py --only pretrained    # just the heavy step
@@ -53,19 +49,11 @@ PAD, UNK = "<pad>", "<unk>"
 
 
 def load_corpus() -> list[list[str]]:
-    """The TRAINING tweets only, cleaned and tokenised.
+    """The training tweets only, cleaned and tokenised.
 
-    It is tempting to train the embeddings on every tweet we have — embedding
-    training needs no labels, so the validation and test text is just free
-    extra material. Resist it. Building the vocabulary from text the model
-    will later be scored on drives the reported out-of-vocabulary rate to
-    literally 0%, which hides the very problem this project is about and would
-    not survive a careful reader.
-
-    Restricting to the training split costs some in-domain vector quality and
-    buys two things worth more: an honest OOV number for the results section,
-    and a live demonstration that fastText composes usable vectors for words
-    the model genuinely never saw.
+    Not val/test, tempting as the free unlabelled text is: a vocabulary built
+    from the text the model is later scored on reports 0% out-of-vocabulary,
+    hiding the very problem this project is about.
     """
     from src.models.bilstm.data import load_and_split
 
@@ -77,13 +65,11 @@ def load_corpus() -> list[list[str]]:
 
 
 def build_vocab(sentences: list[list[str]], min_count: int) -> dict[str, int]:
-    """token -> row index, with <pad> at 0 and <unk> at 1.
+    """token -> row index, most frequent first, with <pad> at 0 and <unk> at 1.
 
-    min_count defaults to 1. With a lookup-table embedding you would raise it,
-    because rare words get randomly initialised vectors that are pure noise.
-    Here every entry is *composed* by fastText from character n-grams, so a
-    rare token still gets a meaningful vector — keeping it strictly reduces the
-    <unk> rate at no cost beyond ~30MB of matrix.
+    min_count=1 keeps even once-seen tokens. A lookup table would drop them as
+    noise, but fastText composes their vectors from character n-grams, so
+    keeping them lowers the <unk> rate for ~30MB of extra matrix.
     """
     counts = Counter(token for sentence in sentences for token in sentence)
     kept = sorted((t for t, c in counts.items() if c >= min_count), key=lambda t: (-counts[t], t))
@@ -221,9 +207,8 @@ def l2_normalise(matrix: np.ndarray) -> np.ndarray:
 def step_assemble() -> None:
     """Normalise both halves, join them, and write the matrix the model loads.
 
-    Each half is L2-normalised BEFORE concatenating. Without that the two
-    sources arrive on different scales and whichever has larger norms would
-    dominate the projection layer's input regardless of which is more useful.
+    L2 first, or the source with the larger norms dominates the projection
+    layer's input regardless of which one is actually more useful.
     """
     matrices = []
     for name in ("pretrained", "indomain"):

@@ -20,7 +20,7 @@ INDOMAIN_MODEL_PATH = EMBEDDING_DIR / "indomain_ft.model"
 SEED = 42  # fixed so train/evaluate rebuild the same split
 MAX_LEN = 64  # tweets longer than 64 words get cut off
 
-FREEZE_EMBEDDINGS = True  # why: see model.py's module docstring
+FREEZE_EMBEDDINGS = True 
 PROJ_DIM = 256  # embeddings are projected down to this before the LSTM
 HIDDEN_SIZE = 256  # per LSTM direction
 DROPOUT = 0.3
