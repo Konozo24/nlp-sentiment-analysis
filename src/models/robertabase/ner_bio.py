@@ -10,7 +10,7 @@ Run:  python -m src.models.robertabase.ner_bio
 import pandas as pd
 import string
 
-from data_cleaning.preprocess_roberta import clean_for_roberta
+from src.data_cleaning.preprocess_roberta import clean_for_roberta
 
 from .config import DATA_PATH
 
