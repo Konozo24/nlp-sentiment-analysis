@@ -1,7 +1,5 @@
 """Load the data, split it, and turn tweets into RoBERTa subword batches,
-keeping one slot per WORD. See src/models/trabsa/data.py for the full
-explanation of the alignment trick — identical here since RoBERTa's
-subword tokenizer works the same way regardless of what pools the words.
+keeping one slot per WORD, not per subword. The BIO tags are aligned to the first subword of each word.
 """
 
 import json

@@ -1,19 +1,17 @@
 """Score the trained BiLSTM on the test split.
 
-Prints a report and writes it to metrics.txt, plus metrics.json for
-scripts/compare_models.py. The headline numbers come from
-src/models/metrics.py, shared with the other two models.
+Writes metrics.txt to read, metrics.json for scripts/compare_models.py, and
+predictions.csv for error analysis. Headline numbers come from
+src/models/metrics.py, shared with the other models so the scores compare.
 
-Two extra blocks are printed for this model alone: the out-of-vocabulary rate,
-which is the number that justifies fastText embeddings over a GloVe table, and
-the token-level BIO report, which diagnoses the CRF. Neither is comparable with
-the SVM.
+The OOV rate and the token-level BIO report are printed for this model alone -
+neither has an SVM equivalent.
 
 Run:  python -m src.models.bilstm.evaluate
 """
 
-# sklearn must import before torch, or Windows raises a heap-corruption crash
-from sklearn.metrics import (  # noqa: I001
+
+from sklearn.metrics import (
     accuracy_score,
     classification_report,
     precision_recall_fscore_support,
@@ -39,12 +37,9 @@ from .predict import DEVICE, load_model
 def collect_predictions(model, loader) -> tuple[dict, dict, list]:
     """Run the model over a loader and gather its predictions.
 
-    Returns (true, pred, per_tweet_tags):
-      true, pred      dicts of flat label-id lists, one entry per task plus
-                      'ner'; NER covers real words only, padding excluded
-      per_tweet_tags  the decoded BIO tag ids grouped by tweet, which the
-                      entity-presence metric needs to ask which types each
-                      tweet contains
+    true, pred      one flat list of label ids per task, plus 'ner'
+    per_tweet_tags  the same NER tags, but grouped by tweet - the shape the
+                    entity-presence metric needs
     """
     all_tasks = [*TASKS, "ner"]
     true = {task: [] for task in all_tasks}
@@ -57,7 +52,8 @@ def collect_predictions(model, loader) -> tuple[dict, dict, list]:
         for task in TASKS:
             true[task] += batch[task].tolist()
             pred[task] += predictions[task].argmax(dim=-1).tolist()
-        # only score real words: padding slots carry no label.
+        # real words only - padding id 0 is a real tag (B-EVENT), so scoring
+        # it would count thousands of phantom entities
         true["ner"] += batch["ner"][batch["mask"]].tolist()
         decoded = model.crf.decode(predictions["ner"], mask=batch["mask"])
         pred["ner"] += [tag for sample in decoded for tag in sample]
@@ -67,8 +63,9 @@ def collect_predictions(model, loader) -> tuple[dict, dict, list]:
 
 
 def main():
+    # run the model over the test split
     _, _, test_df = load_and_split()
-    model, vocab, labels = load_model()  # already in eval mode
+    model, vocab, labels = load_model()
 
     loader = make_loader(test_df, vocab, labels, BATCH_SIZE, pin_memory=DEVICE.type == "cuda")
     true, pred, per_tweet_tags = collect_predictions(model, loader)
@@ -82,6 +79,7 @@ def main():
     gold_labels: dict[str, list[str]] = {}
     pred_labels: dict[str, list[str]] = {}
 
+    # sentiment, emotion, topic
     for task in TASKS:
         report, headline = single_label_report(true[task], pred[task], labels[task])
         headlines[task] = headline
@@ -97,8 +95,9 @@ def main():
             report,
         ])
 
-    # collapse each tweet's BIO sequence into the entity types it mentions,
-    # the form the shared metric scores
+    # NER, scored as entity presence
+    # collapse each tweet's tags into the set of types it mentions - the one
+    # framing all four models share, so these numbers compare across them
     predicted_types = [
         types_from_bio([labels["ner"][tag] for tag in tags]) for tags in per_tweet_tags
     ]
@@ -110,8 +109,7 @@ def main():
     headlines["ner"] = headline
     lines.extend(["\n===== NER =====", presence_report])
 
-    # token accuracy here counts the dominant 'O' class, so the entity-only
-    # line below it is the meaningful figure
+    # NER, scored per token
     lines.append("\n--- token-level BIO detail (this model only) ---")
     lines.append(f"Token accuracy incl. 'O': {accuracy_score(true['ner'], pred['ner']):.4f}")
     lines.append(
@@ -126,6 +124,7 @@ def main():
     )
     lines.append(f"Entity tags only (excluding O): precision {p:.4f}, recall {r:.4f}, F1 {f1:.4f}")
 
+    # save result
     report = "\n".join(lines)
     print(report)
     MODEL_DIR.mkdir(parents=True, exist_ok=True)

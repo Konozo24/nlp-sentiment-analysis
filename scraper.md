@@ -1,6 +1,6 @@
-# World Cup 2018 Twitter Scraper
+# World Cup Twitter Scraper
 
-Web crawler for collecting tweets about the 2018 FIFA World Cup from Twitter/X as a dataset for NLP sentiment analysis. Built with [twscrape](https://github.com/vladkens/twscrape).
+Web crawler for collecting tweets about the 2014-2026 FIFA World Cup from Twitter/X as a dataset for NLP sentiment analysis. Built with [twscrape](https://github.com/vladkens/twscrape).
 
 ---
 
@@ -105,7 +105,7 @@ The same tweet matched by multiple queries is only saved once (deduplicated by t
 
 ## CSV Output   
 
-Saved to `data/raw/rapidkl_tweets.csv`.
+Saved to `data/raw/worldcup{year}_tweets.csv`.
 
 | Column | Description |
 |---|---|
