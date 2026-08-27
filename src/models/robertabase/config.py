@@ -1,11 +1,4 @@
-"""Settings for RobertaBase — the no-CNN ablation baseline.
-
-Identical to robertacnn/config.py except NUM_FILTERS/KERNEL_SIZES don't
-apply here. Same encoder, same tasks, same training recipe — the ONLY
-architectural difference from RobertaCNN is self-attention-pooling instead of CNN
-pooling, and no CNN token-enrichment before the NER CRF. This isolates
-what the CNN specifically contributes.
-"""
+"""Settings for RobertaBase """
 
 from pathlib import Path
 

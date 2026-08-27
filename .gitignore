@@ -10,7 +10,6 @@ data/accounts.db
 # except the ~500MB RoBERTa checkpoints, which exceed GitHub's 100MB per-file
 # limit. They are split into <100MB parts by scripts/checkpoint_parts.py; run
 # `python -m scripts.checkpoint_parts restore` after cloning to rebuild them.
-data/models/robertacnn/best_model.pt
 data/models/robertabase/best_model.pt
 
 # ignore regenerable outputs (rebuild via base_cleaning);
