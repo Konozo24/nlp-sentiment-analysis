@@ -1,7 +1,6 @@
 """Train RobertaBase.
 
-Same discriminative-LR + warmup/decay recipe as RoBERTa-CNN, so performance
-differences trace to the pooling architecture rather than different training
+Performance differences trace to the pooling architecture rather than different training
 regimes.
 
 Run:  python -m src.models.robertabase.train [--epochs N]
