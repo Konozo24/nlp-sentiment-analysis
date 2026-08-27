@@ -3,10 +3,6 @@
 Run:  streamlit run app/streamlit_app.py
 """
 
-import os
-
-os.environ.setdefault("HF_HUB_OFFLINE", "1")
-
 import sys
 from functools import partial
 from pathlib import Path
@@ -17,6 +13,10 @@ import streamlit as st
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
+
+from scripts.checkpoint_parts import restore_all
+
+restore_all()
 
 st.set_page_config(page_title="World Cup tweet analysis", page_icon="⚽", layout="wide")
 

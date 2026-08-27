@@ -75,10 +75,16 @@ python -m scripts.checkpoint_parts restore
 streamlit run app/streamlit_app.py
 ```
 
-The `restore` step exists because the RoBERTa checkpoints (~500MB each) are too big for a
-single git blob and are committed as split parts instead. It rebuilds each missing checkpoint
-from its `.parts/` folder and verifies it byte-for-byte against a checksum. Safe to re-run - it
-skips checkpoints that are already present.
+The fine-tuned RoBERTa checkpoints are split into parts because they are too big for a single
+GitHub file. The Streamlit app restores any missing checkpoint automatically and verifies its
+checksum, so the explicit `restore` command above is optional. It is safe to run manually and
+skips files that are already restored.
+
+The first time the RoBERTa page is used, the app automatically downloads the public
+`cardiffnlp/twitter-roberta-base` encoder and tokenizer from Hugging Face and caches them on the
+user's computer. Internet access is required only for this first RoBERTa load; later runs reuse
+the cache. Running `evaluate.py` is not required to use the live demo - it only regenerates the
+committed performance reports.
 
 Tests:
 
