@@ -92,7 +92,12 @@ def _render_heatmap(counts: pd.DataFrame, normalize: bool) -> None:
             alt.datum.value > threshold, alt.value("white"), alt.value("black")
         ),
     )
-    st.altair_chart(heatmap + labels_layer)
+
+    chart = (heatmap + labels_layer).properties(height=450)
+    
+    left, _right = st.columns(2)
+    with left:
+        st.altair_chart(chart, use_container_width=True)
 
 
 def _render_top_confusions(counts: pd.DataFrame, top_n: int = 2) -> None:
