@@ -165,7 +165,7 @@ def main() -> None:
     MODEL_DIR.mkdir(parents=True, exist_ok=True)
     save_json(labels, MODEL_DIR / "labels.json")
 
-    # resume from a checkpoint, if asked 
+    # resume from a checkpoint, if asked
     start_epoch = 1
     best_val_loss = float("inf")
     if args.resume and CHECKPOINT_PATH.exists():

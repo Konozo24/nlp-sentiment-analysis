@@ -21,7 +21,7 @@ from .config import DROPOUT, FREEZE_EMBEDDINGS, HIDDEN_SIZE, PROJ_DIM, TASKS
 class BiLSTM(nn.Module):
     def __init__(self, n_classes: dict[str, int], embeddings: torch.Tensor) -> None:
         super().__init__()
-        
+
         self.embedding = nn.Embedding.from_pretrained(
             embeddings.float(), freeze=FREEZE_EMBEDDINGS, padding_idx=0
         )
@@ -42,10 +42,10 @@ class BiLSTM(nn.Module):
         lstm_out = HIDDEN_SIZE * 2  # bidirectional output, so need x2
 
         self.attention = nn.Linear(lstm_out, 1)
-        self.heads = nn.ModuleDict({task: nn.Linear(lstm_out, n_classes[task]) for task in TASKS})  # create 3 separate heads (sentiment,emotion,topic)
+        # one head per sentence-level task (sentiment, emotion, topic)
+        self.heads = nn.ModuleDict({task: nn.Linear(lstm_out, n_classes[task]) for task in TASKS})
         self.ner_head = nn.Linear(lstm_out, n_classes["ner"])
         self.crf = CRF(n_classes["ner"], batch_first=True)
-
 
     @classmethod
     def from_labels(cls, labels: dict[str, list[str]], embeddings: torch.Tensor) -> "BiLSTM":
