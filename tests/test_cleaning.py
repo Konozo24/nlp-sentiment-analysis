@@ -1,6 +1,6 @@
 """Unit tests for the cleaning helpers and the three model pipelines.
 
-Run:  python -m pytest tests/ -v      (or)      python -m tests.test_cleaning
+Run: python -m tests.test_cleaning
 """
 
 from src.data_cleaning.preprocess_svm import clean_for_svm

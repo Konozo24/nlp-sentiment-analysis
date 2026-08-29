@@ -17,8 +17,7 @@ LIMIT_PER_QUERY = 700
 DATE_SINCE: str | None = "2026-01-01"
 DATE_UNTIL: str | None = None  # e.g. "2024-12-31"
 EXCLUDE_RETWEETS = True  # appends -is:retweet to every query
-EXCLUDE_OFFICIAL_ACCOUNT = True  # appends -from:MyRapidKL; removes their own announcements
-
+EXCLUDE_OFFICIAL_ACCOUNT = True
 CSV_COLUMNS = [
     "id",
     "rawContent",
