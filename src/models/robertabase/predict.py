@@ -1,4 +1,4 @@
-"""Try the trained RobertaBase model on any tweet you type.
+"""Try the trained RobertaBase model on any tweet.
 
 Run:  python -m src.models.robertabase.predict
       python -m src.models.robertabase.predict "Messi is on fire!"

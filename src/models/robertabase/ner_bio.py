@@ -1,8 +1,7 @@
 """Turn the 'ner' column into one BIO tag per word, for the RobertaBase pipeline.
 
 Thin wrapper around the shared core in src.data_cleaning.ner_bio_core —
-see that module for the tagging logic. Only the clean function differs
-between team members' models.
+see that module for the tagging logic.
 
 Run:  python -m src.models.robertabase.ner_bio
 """
